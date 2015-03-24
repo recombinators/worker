@@ -42,7 +42,9 @@ def checking_for_jobs():
 def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
     b = Downloader(verbose=True, download_dir=path)
-    b.download([job['scene_id']], [job['band_1'], job['band_2'], job['band_3']])
+    # import pdb; pdb.set_trace()
+    b.download([str(job['scene_id'])],
+               [job['band_1'], job['band_2'], job['band_3']])
     input_path = os.path.join(path, sceneID[0])
 
     c = Process(input_path, bands=bands, dst_path=path, verbose=True)
