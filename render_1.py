@@ -9,7 +9,8 @@ from boto.s3.key import Key
 import zipfile
 
 
-sceneID = ['LC80030172015001LGN00']
+# sceneID = ['LC80030172015001LGN00']
+sceneID = ['LC80460272015014LGN00']
 bands = [4, 3, 2]
 
 path = '/Users/mark/projects/landsat_worker/dl2'
@@ -53,3 +54,5 @@ def process():
 
     # generates url that works for 1 hour
     # plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
+
+process()
