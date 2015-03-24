@@ -1,4 +1,4 @@
-from boto.sqs import connect_sqs
+from boto import connect_sqs
 from boto.sqs.message import Message
 
 
@@ -20,13 +20,19 @@ def enqueue_message(message, queue):
     return queue.write(message)
 
 
-def get_message(jobs_queue, num_messages=1, visibility_timeout=300,
+def get_message(queue, num_messages=1, visibility_timeout=300,
                 wait_time_seconds=20):
     '''Get a message from the given queue. Default visibility timeout is
        5 minutes, message wait time is 20 seconds, number of messages is 1.''' 
-    return jobs_queue.get_messages(visibility_timeout=visibility_timeout,
-                                   wait_time_seconds=wait_time_seconds,
-                                   message_attributes=['All'])
+    return queue.get_messages(visibility_timeout=visibility_timeout,
+                              wait_time_seconds=wait_time_seconds,
+                              message_attributes=['All'])
+
+
+def get_attributes(message):
+    '''Return a dictionary of the message attributes.'''
+    return {key: value['string_value']
+            for key, value in message[0].message_attributes.iteritems()}
 
 
 def delete_message_from_queue(message, queue):
@@ -53,7 +59,7 @@ def build_job_message(**kwargs):
             'string_value': kwargs['email']
             },
         'scene_id': {
-            'data_type': 'Number',
+            'data_type': 'String',
             'string_value': kwargs['scene_id']
             },
         'band_1': {

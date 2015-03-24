@@ -22,20 +22,25 @@ AWS_SECRET_ACCESS_KEY = os.environ('AWS_SECRET_ACCESS_KEY')
 LANDSAT_JOBS_QUEUE = 'landsat_jobs_queue'
 
 
+def main():
+    checking_for_jobs()
+
+
 def checking_for_jobs():
     '''Poll jobs queue for jobs.'''
-    conn = sqs.make_connection()
+    conn = sqs.make_connection(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                               aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
     jobs_queue = sqs.get_queue(LANDSAT_JOBS_QUEUE, conn)
     while True:
         job_message = sqs.get_message(jobs_queue)
-        if job_message:
-            process()
+        job_attributes = sqs.get_attributes(job_message)
+        process(job_attributes)
 
 
-def process():
-    """Given bands and sceneID, download, image process, zip & upload to S3."""
+def process(job):
+    '''Given bands and sceneID, download, image process, zip & upload to S3.'''
     b = Downloader(verbose=True, download_dir=path)
-    b.download(sceneID, bands)
+    b.download(job['scene_id'], [job['band_1'], job['band_2'], job['band_2']])
     input_path = os.path.join(path, sceneID[0])
 
     c = Process(input_path, bands=bands, dst_path=path, verbose=True)
@@ -70,8 +75,6 @@ def process():
     out = hello.generate_url(0, query_auth=False, force_http=True)
     print out
     return out
-    
-    # generates url that works for 1 hour
-    # plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
 
-process()
+if __name__ == '__main__':
+    main()
