@@ -7,6 +7,7 @@ import boto
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import zipfile
+import sqs
 
 
 # sceneID = ['LC80030172015001LGN00']
@@ -18,6 +19,17 @@ path = '/home/ubuntu/dl'
 
 AWS_ACCESS_KEY_ID = os.environ('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ('AWS_SECRET_ACCESS_KEY')
+LANDSAT_JOBS_QUEUE = 'landsat_jobs_queue'
+
+
+def checking_for_jobs():
+    '''Poll jobs queue for jobs.'''
+    conn = sqs.make_connection()
+    jobs_queue = sqs.get_queue(LANDSAT_JOBS_QUEUE, conn)
+    while True:
+        job_message = sqs.get_message(jobs_queue)
+        if job_message:
+            process()
 
 
 def process():
