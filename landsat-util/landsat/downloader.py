@@ -77,7 +77,7 @@ class Downloader(VerbosityMixin):
 
         if self.remote_file_exists(url):
             self.fetch(url, path, filename)
-
+            return
         else:
             RemoteFileDoesntExist('%s is not available on Amazon S3' % filename)
 
