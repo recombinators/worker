@@ -35,6 +35,8 @@ def checking_for_jobs():
         job_message = sqs.get_message(jobs_queue)
         job_attributes = sqs.get_attributes(job_message)
         process(job_attributes)
+        if job_message:
+            sqs.delete_message_from_queue(job_message, jobs_queue)
 
 
 def process(job):
