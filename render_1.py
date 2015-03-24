@@ -16,6 +16,9 @@ bands = [4, 3, 2]
 path = '/home/ubuntu/dl'
 # sceneID='LC80030172015001LGN00'
 
+AWS_ACCESS_KEY_ID = os.environ('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ('AWS_SECRET_ACCESS_KEY')
+
 
 def process():
     """Given bands and sceneID, download, image process, zip & upload to S3."""
@@ -41,7 +44,8 @@ def process():
 
     # upload to s3
     file_location = os.path.join('/home/ubuntu/landsat_worker', file_name_zip)
-    conne = boto.connect_s3()
+    conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                            aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
     b = conne.get_bucket('landsatproject')
     k = Key(b)
     k.key = file_name_zip
