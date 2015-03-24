@@ -7,6 +7,8 @@ import boto
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import zipfile
+import requests
+import json
 
 
 # sceneID = ['LC80030172015001LGN00']
@@ -53,9 +55,18 @@ def process():
 
     out = hello.generate_url(0, query_auth=False, force_http=True)
     print out
+    send_post_request(out)
     return out
     
     # generates url that works for 1 hour
     # plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
 
 process()
+
+
+def send_post_request(pic_url):
+    """Send post request to pyramid app, to notify completion."""
+    payload = {'url': pic_url}
+    post_url = "http://landsat.club/done/"
+    r = requests.post(post_url, data=json.dumps(payload))
+    print "post request sent"
