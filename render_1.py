@@ -28,8 +28,9 @@ def checking_for_jobs():
     jobs_queue = sqs.get_queue(LANDSAT_JOBS_QUEUE, conn)
     while True:
         job_message = sqs.get_message(jobs_queue)
-        job_attributes = sqs.get_attributes(job_message)
-        success = process(job_attributes)
+        if job_message:
+            job_attributes = sqs.get_attributes(job_message)
+            success = process(job_attributes)
         if job_message and success:
             sqs.delete_message_from_queue(job_message, jobs_queue)
 
