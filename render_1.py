@@ -14,40 +14,42 @@ bands = [4, 3, 2]
 
 path = '/Users/mark/projects/landsat_worker/dl2'
 # sceneID='LC80030172015001LGN00'
-b = Downloader(verbose=True, download_dir=path)
-b.download(sceneID, bands)
-input_path = os.path.join(path, sceneID[0])
-dest_path = input_path
-
-c = Process(input_path, bands=bands, dst_path=path, verbose=True)
-c.run(pansharpen=False)
-
-band_output = ''
-
-for i in bands:
-    band_output = '{}{}'.format(band_output, i)
-file_name = '{}_bands_{}.TIF'.format(sceneID[0], band_output)
-file_location = os.path.join(input_path, file_name)
-
-# zip file, maintain location
-file_name_zip = '{}_bands_{}.zip'.format(sceneID[0], band_output)
-zf = zipfile.ZipFile(file_name_zip, 'w', zipfile.ZIP_DEFLATED)
-zf.write(file_location)
-zf.close()
-
-# upload to s3
-file_location = os.path.join(input_path, file_name_zip)
-conne = boto.connect_s3()
-b = conne.get_bucket('landsatproject')
-k = Key(b)
-k.key = file_name_zip
-k.set_contents_from_filename(file_location)
-k.get_contents_to_filename(file_location)
-hello = b.get_key('test')
-# make public
-hello.set_canned_acl('public-read')
-hello.generate_url(0, query_auth=False, force_http=True)
 
 
-# generates url that works for 1 hour
-# plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
+def process():
+    """Given bands and sceneID, download, image process, zip & upload to S3."""
+    b = Downloader(verbose=True, download_dir=path)
+    b.download(sceneID, bands)
+    input_path = os.path.join(path, sceneID[0])
+
+    c = Process(input_path, bands=bands, dst_path=path, verbose=True)
+    c.run(pansharpen=False)
+
+    band_output = ''
+
+    for i in bands:
+        band_output = '{}{}'.format(band_output, i)
+    file_name = '{}_bands_{}.TIF'.format(sceneID[0], band_output)
+    file_location = os.path.join(input_path, file_name)
+
+    # zip file, maintain location
+    file_name_zip = '{}_bands_{}.zip'.format(sceneID[0], band_output)
+    zf = zipfile.ZipFile(file_name_zip, 'w', zipfile.ZIP_DEFLATED)
+    zf.write(file_location)
+    zf.close()
+
+    # upload to s3
+    file_location = os.path.join(input_path, file_name_zip)
+    conne = boto.connect_s3()
+    b = conne.get_bucket('landsatproject')
+    k = Key(b)
+    k.key = file_name_zip
+    k.set_contents_from_filename(file_location)
+    k.get_contents_to_filename(file_location)
+    hello = b.get_key('test')
+    # make public
+    hello.set_canned_acl('public-read')
+    return hello.generate_url(0, query_auth=False, force_http=True)
+
+    # generates url that works for 1 hour
+    # plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
