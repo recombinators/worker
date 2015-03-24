@@ -13,7 +13,7 @@ import zipfile
 sceneID = ['LC80460272015014LGN00']
 bands = [4, 3, 2]
 
-path = '/Users/mark/projects/landsat_worker/dl2'
+path = '/home/ubuntu/dl'
 # sceneID='LC80030172015001LGN00'
 
 
@@ -40,18 +40,21 @@ def process():
     zf.close()
 
     # upload to s3
-    file_location = os.path.join(input_path, file_name_zip)
+    file_location = os.path.join('/home/ubuntu/landsat_worker', file_name_zip)
     conne = boto.connect_s3()
     b = conne.get_bucket('landsatproject')
     k = Key(b)
     k.key = file_name_zip
     k.set_contents_from_filename(file_location)
     k.get_contents_to_filename(file_location)
-    hello = b.get_key('test')
+    hello = b.get_key(file_name_zip)
     # make public
     hello.set_canned_acl('public-read')
-    return hello.generate_url(0, query_auth=False, force_http=True)
 
+    out = hello.generate_url(0, query_auth=False, force_http=True)
+    print out
+    return out
+    
     # generates url that works for 1 hour
     # plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
 
