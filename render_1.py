@@ -10,12 +10,7 @@ import zipfile
 import sqs
 
 
-# sceneID = ['LC80030172015001LGN00']
-sceneID = ['LC80460272015014LGN00']
-bands = [4, 3, 2]
-
-path = '~/dl'
-# sceneID='LC80030172015001LGN00'
+path = '/Users/chatzis/projects/landsatproject/landsat_worker/dl'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
@@ -34,18 +29,18 @@ def checking_for_jobs():
     while True:
         job_message = sqs.get_message(jobs_queue)
         job_attributes = sqs.get_attributes(job_message)
-        process(job_attributes)
-        if job_message:
+        success = process(job_attributes)
+        if job_message and success:
             sqs.delete_message_from_queue(job_message, jobs_queue)
 
 
 def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
     b = Downloader(verbose=True, download_dir=path)
-    # import pdb; pdb.set_trace()
-    b.download([str(job['scene_id'])],
-               [job['band_1'], job['band_2'], job['band_3']])
-    input_path = os.path.join(path, sceneID[0])
+    scene_id = [str(job['scene_id'])]
+    bands = [job['band_1'], job['band_2'], job['band_3']]
+    b.download(scene_id, bands)
+    input_path = os.path.join(path, scene_id[0])
 
     c = Process(input_path, bands=bands, dst_path=path, verbose=True)
     c.run(pansharpen=False)
@@ -54,14 +49,13 @@ def process(job):
 
     for i in bands:
         band_output = '{}{}'.format(band_output, i)
-    file_name = '{}_bands_{}.TIF'.format(sceneID[0], band_output)
+    file_name = '{}_bands_{}.TIF'.format(scene_id[0], band_output)
     file_location = os.path.join(input_path, file_name)
 
     # zip file, maintain location
-    file_name_zip = '{}_bands_{}.zip'.format(sceneID[0], band_output)
-    zf = zipfile.ZipFile(file_name_zip, 'w', zipfile.ZIP_DEFLATED)
-    zf.write(file_location)
-    zf.close()
+    file_name_zip = '{}_bands_{}.zip'.format(scene_id[0], band_output)
+    with zipfile.ZipFile(file_name_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
+        myzip.write(file_location)
 
     # upload to s3
     file_location = os.path.join('~/landsat_worker', file_name_zip)
@@ -78,7 +72,7 @@ def process(job):
 
     out = hello.generate_url(0, query_auth=False, force_http=True)
     print out
-    return out
+    return True
 
 if __name__ == '__main__':
     main()
