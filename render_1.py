@@ -54,11 +54,12 @@ def process(job):
 
     # zip file, maintain location
     file_name_zip = '{}_bands_{}.zip'.format(scene_id[0], band_output)
-    with zipfile.ZipFile(file_name_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
+    path_to_zip = os.path.join(input_path, file_name_zip)
+    with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
         myzip.write(file_location)
 
     # upload to s3
-    file_location = os.path.join('~/landsat_worker', file_name_zip)
+    file_location = os.path.join(input_path, file_name_zip)
     conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
                             aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
     b = conne.get_bucket('landsatproject')
