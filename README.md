@@ -1,6 +1,7 @@
 # landsat_worker
-To install on worker
+To install on worker:
 spool up t2.medium instance
+
 sudo apt-get update
 
 sudo apt-get install python-pip python-numpy python-scipy libgdal-dev libatlas-base-dev gfortran
