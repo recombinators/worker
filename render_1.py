@@ -41,9 +41,19 @@ for i in bands:
 file_name = '{}_bands_{}.TIF'.format(sceneID[0], band_output)
 file_location = os.path.join(input_path, file_name)
 
+file_name = 'test.png'
+file_location = '/Users/mark/Desktop/test.png'
 conne = boto.connect_s3()
 b = conne.get_bucket('landsatproject')
 k = Key(b)
-k.key = 'sceneID'
+k.key = 'test'
 k.set_contents_from_filename(file_location)
 k.get_contents_to_filename(file_location)
+hello = b.get_key('test')
+# set to be public
+hello.set_canned_acl('public-read')
+hello.generate_url(0, query_auth=False, force_http=True)
+
+
+# generates url that works for 1 hour
+# plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
