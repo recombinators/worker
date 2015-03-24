@@ -14,11 +14,11 @@ import sqs
 sceneID = ['LC80460272015014LGN00']
 bands = [4, 3, 2]
 
-path = '/home/ubuntu/dl'
+path = '~/dl'
 # sceneID='LC80030172015001LGN00'
 
-AWS_ACCESS_KEY_ID = os.environ('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.environ('AWS_SECRET_ACCESS_KEY')
+AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
+AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
 LANDSAT_JOBS_QUEUE = 'landsat_jobs_queue'
 
 
@@ -42,7 +42,7 @@ def checking_for_jobs():
 def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
     b = Downloader(verbose=True, download_dir=path)
-    b.download(job['scene_id'], [job['band_1'], job['band_2'], job['band_2']])
+    b.download([job['scene_id']], [job['band_1'], job['band_2'], job['band_3']])
     input_path = os.path.join(path, sceneID[0])
 
     c = Process(input_path, bands=bands, dst_path=path, verbose=True)
@@ -62,7 +62,7 @@ def process(job):
     zf.close()
 
     # upload to s3
-    file_location = os.path.join('/home/ubuntu/landsat_worker', file_name_zip)
+    file_location = os.path.join('~/landsat_worker', file_name_zip)
     conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
                             aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
     b = conne.get_bucket('landsatproject')
