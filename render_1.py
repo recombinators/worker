@@ -13,6 +13,8 @@ from shutil import rmtree
 import datetime
 
 path = '/home/ubuntu/dl'
+path_error_log = 'home/ubuntu/logs'
+path_activity_log = 'home/ubuntu/logs'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
@@ -37,23 +39,50 @@ def main():
 
 def checking_for_jobs():
     '''Poll jobs queue for jobs.'''
-    SQSconn = make_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-    jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
-    while True:
-        job_message = get_message(jobs_queue)
-        if job_message:
-            job_attributes = get_attributes(job_message)
-            delete_message_from_handle(SQSconn, jobs_queue, job_message[0])
-            try:
-                process(job_attributes)
-            except Exception as e:
-                # If processing fails, send message to pyramid to update db
-                with open('error_log.txt', 'a') as el:
-                    el.wrote(datetime.datetime.utcnow())
-                    el.write(job_attributes)
-                    el.write(e.__doc__)
-                    el.write(e.message)
-                send_post_request(job_attributes['job_id'], 10)
+    with open('{}/activity_log.txt'.format(path_activity_log), 'a') as al:
+        SQSconn = make_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+        al.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                  SQSconn))
+        jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
+        al.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                  jobs_queue))
+        while True:
+            job_message = get_message(jobs_queue)
+            if job_message:
+                try:
+                    job_attributes = get_attributes(job_message)
+                    al.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                              job_attributes))
+                except Exception as e:
+                    al.write('[{}] Attribute retrieval fail because {}'
+                             .format(datetime.datetime.utcnow(), e))
+
+                try:
+                    delete_message_from_handle(SQSconn, jobs_queue, job_message[0])
+                    al.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                              job_attributes))
+                except Exception as e:
+                    al.write('[{}] Delete message fail because {}'
+                             .format(datetime.datetime.utcnow(), e))
+
+                try:
+                    status = process(job_attributes)
+                    al.write('[{}] Process success is {}'
+                             .format(datetime.datetime.utcnow(), status))
+                except Exception as e:
+                    # If processing fails, send message to pyramid to update db
+                    al.write('[{}] Process success is {}'
+                             .format(datetime.datetime.utcnow(), False))
+                    al.write('[{}] Job process fail because {}'
+                             .format(datetime.datetime.utcnow(), e))
+                    with open('{}/error_log.txt'.format(path_error_log), 'a') as el:
+                        el.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                 job_attributes))
+                        el.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                 e.__doc__))
+                        el.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                 e.message))
+                    send_post_request(job_attributes['job_id'], 10)
 
 
 def process(job):
