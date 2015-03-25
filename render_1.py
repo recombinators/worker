@@ -4,17 +4,18 @@ from downloader import Downloader
 from image import Process
 import os
 import boto
-from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import zipfile
-import sqs
+from sqs import (make_connection, get_queue, get_message, get_attributes,
+                 delete_message_from_handle,)
 
 
-path = '/Users/chatzis/projects/landsatproject/landsat_worker/dl'
+path = '/home/ubuntu/dl'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
-LANDSAT_JOBS_QUEUE = 'landsat_jobs_queue'
+JOBS_QUEUE = 'landsat_jobs_queue'
+REGION = 'us-west-2'
 
 
 def main():
@@ -23,15 +24,14 @@ def main():
 
 def checking_for_jobs():
     '''Poll jobs queue for jobs.'''
-    conn = sqs.make_connection(aws_access_key_id=AWS_ACCESS_KEY_ID,
-                               aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-    jobs_queue = sqs.get_queue(LANDSAT_JOBS_QUEUE, conn)
+    SQSconn = make_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
     while True:
-        job_message = sqs.get_message(jobs_queue)
-        job_attributes = sqs.get_attributes(job_message)
+        job_message = get_message(jobs_queue)
+        job_attributes = get_attributes(job_message)
         success = process(job_attributes)
         if job_message and success:
-            sqs.delete_message_from_queue(job_message, jobs_queue)
+            delete_message_from_handle(SQSconn, jobs_queue, job_message[0])
 
 
 def process(job):
