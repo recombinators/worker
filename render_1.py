@@ -46,6 +46,7 @@ def checking_for_jobs():
                 process(job_attributes)
             except:
                 # If processing fails, send message to pyramid to update db
+                print job_attributes
                 send_post_request(job_attributes['pk'], 10)
 
 
