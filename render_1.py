@@ -55,12 +55,14 @@ def process(job):
     file_location = os.path.join(input_path, file_name)
 
     # zip file, maintain location
+    print 'Zipping file'
     file_name_zip = '{}_bands_{}.zip'.format(scene_id[0], band_output)
     path_to_zip = os.path.join(input_path, file_name_zip)
     with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
         myzip.write(file_location)
 
     # upload to s3
+    print 'Uploading to S3'
     file_location = os.path.join(input_path, file_name_zip)
     conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
                             aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
@@ -87,7 +89,7 @@ def send_post_request(pic_url, pk):
     payload = {'url': pic_url, 'pk': pk}
     post_url = "http://develop.landsat.club/done"
     requests.post(post_url, data=payload)
-    print "post request sent"
+    print "post request sent to {}".format(post_url)
     return True
 
 if __name__ == '__main__':
