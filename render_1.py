@@ -22,6 +22,18 @@ JOBS_QUEUE = 'landsat_jobs_queue'
 REGION = 'us-west-2'
 
 
+def write_activity(message):
+    fo = open(path_activity_log, 'a')
+    fo.write(message + '\n')
+    fo.close()
+
+
+def write_error(message):
+    fo = open(path_activity_log, 'a')
+    fo.write(message + '\n')
+    fo.close()
+
+
 def send_post_request(job_id, status=10, pic_url=None):
     """Send post request to pyramid app, to notify completion."""
     payload = {'url': pic_url, 'job_id': job_id, 'status': status}
@@ -39,50 +51,46 @@ def main():
 
 def checking_for_jobs():
     '''Poll jobs queue for jobs.'''
-    with open(path_activity_log, 'a') as al:
-        SQSconn = make_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-        al.write('[{}] {}'.format(datetime.datetime.utcnow(),
-                                  SQSconn))
-        jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
-        al.write('[{}] {}'.format(datetime.datetime.utcnow(),
-                                  jobs_queue))
-        while True:
-            job_message = get_message(jobs_queue)
-            if job_message:
-                try:
-                    job_attributes = get_attributes(job_message)
-                    al.write('[{}] {}'.format(datetime.datetime.utcnow(),
-                                              job_attributes))
-                except Exception as e:
-                    al.write('[{}] Attribute retrieval fail because {}'
-                             .format(datetime.datetime.utcnow(), e))
+    SQSconn = make_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    write_activity('[{}] {}'.format(datetime.datetime.utcnow(), SQSconn))
+    jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
+    write_activity('[{}] {}'.format(datetime.datetime.utcnow(), jobs_queue))
+    while True:
+        job_message = get_message(jobs_queue)
+        if job_message:
+            try:
+                job_attributes = get_attributes(job_message)
+                write_activity('[{}] {}'.format(datetime.datetime.utcnow(),
+                                                job_attributes))
+            except Exception as e:
+                write_activity('[{}] Attribute retrieval fail because {}'
+                               .format(datetime.datetime.utcnow(), e))
 
-                try:
-                    delete_message_from_handle(SQSconn, jobs_queue, job_message[0])
-                    al.write('[{}] {}'.format(datetime.datetime.utcnow(),
-                                              job_attributes))
-                except Exception as e:
-                    al.write('[{}] Delete message fail because {}'
-                             .format(datetime.datetime.utcnow(), e))
+            try:
+                delete_message_from_handle(SQSconn, jobs_queue, job_message[0])
+                write_activity('[{}] {}'.format(datetime.datetime.utcnow(),
+                                                job_attributes))
+            except Exception as e:
+                write_activity('[{}] Delete message fail because {}'
+                               .format(datetime.datetime.utcnow(), e))
 
-                try:
-                    status = process(job_attributes)
-                    al.write('[{}] Process success is {}'
-                             .format(datetime.datetime.utcnow(), status))
-                except Exception as e:
-                    # If processing fails, send message to pyramid to update db
-                    al.write('[{}] Process success is {}'
-                             .format(datetime.datetime.utcnow(), False))
-                    al.write('[{}] Job process fail because {}'
-                             .format(datetime.datetime.utcnow(), e))
-                    with open(path_error_log, 'a') as el:
-                        el.write('[{}] {}'.format(datetime.datetime.utcnow(),
-                                 job_attributes))
-                        el.write('[{}] {}'.format(datetime.datetime.utcnow(),
-                                 e.__doc__))
-                        el.write('[{}] {}'.format(datetime.datetime.utcnow(),
-                                 e.message))
-                    send_post_request(job_attributes['job_id'], 10)
+            try:
+                status = process(job_attributes)
+                write_activity('[{}] Process success is {}'
+                               .format(datetime.datetime.utcnow(), status))
+            except Exception as e:
+                # If processing fails, send message to pyramid to update db
+                write_activity('[{}] Process success is {}'
+                               .format(datetime.datetime.utcnow(), False))
+                write_activity('[{}] Job process fail because {}'
+                               .format(datetime.datetime.utcnow(), e))
+                write_error('[{}] {}'.format(datetime.datetime.utcnow(),
+                                             job_attributes))
+                write_error('[{}] {}'.format(datetime.datetime.utcnow(),
+                                             e.__doc__))
+                write_error('[{}] {}'.format(datetime.datetime.utcnow(),
+                                             e.message))
+                send_post_request(job_attributes['job_id'], 10)
 
 
 def process(job):
