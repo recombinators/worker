@@ -4,18 +4,19 @@ from downloader import Downloader
 from image import Process
 import os
 import boto
-from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import zipfile
 import requests
-import sqs
+from sqs import (make_connection, get_queue, get_message, get_attributes,
+                 delete_message_from_handle,)
 
 
-path = '/Users/chatzis/projects/landsatproject/landsat_worker/dl'
+path = '/home/ubuntu/dl'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
-LANDSAT_JOBS_QUEUE = 'landsat_jobs_queue'
+JOBS_QUEUE = 'landsat_jobs_queue'
+REGION = 'us-west-2'
 
 
 def main():
@@ -24,16 +25,14 @@ def main():
 
 def checking_for_jobs():
     '''Poll jobs queue for jobs.'''
-    conn = sqs.make_connection(aws_access_key_id=AWS_ACCESS_KEY_ID,
-                               aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-    jobs_queue = sqs.get_queue(LANDSAT_JOBS_QUEUE, conn)
+    SQSconn = make_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
     while True:
-        job_message = sqs.get_message(jobs_queue)
-        if job_message:
-            job_attributes = sqs.get_attributes(job_message)
-            success = process(job_attributes)
+        job_message = get_message(jobs_queue)
+        job_attributes = get_attributes(job_message)
+        success = process(job_attributes)
         if job_message and success:
-            sqs.delete_message_from_queue(job_message, jobs_queue)
+            delete_message_from_handle(SQSconn, jobs_queue, job_message[0])
 
 
 def process(job):
@@ -77,7 +76,7 @@ def process(job):
     print out
     send_post_request(out, job['pk'])
     return True
-    
+
     # generates url that works for 1 hour
     # plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
 
@@ -86,7 +85,7 @@ def send_post_request(pic_url, pk):
     """Send post request to pyramid app, to notify completion."""
     payload = {'url': pic_url, 'pk': pk}
     post_url = "http://landsat.club/done/"
-    r = requests.post(post_url, data=payload)
+    requests.post(post_url, data=payload)
     print "post request sent"
     return True
 
