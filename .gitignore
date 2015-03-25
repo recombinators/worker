@@ -58,6 +58,6 @@ target/
 *.sublime-workspace
 
 # Random
-*.TIFF
+*.TIF
 dl/
 
