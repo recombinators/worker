@@ -8,7 +8,6 @@ from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import zipfile
 import requests
-import json
 import sqs
 
 
@@ -87,7 +86,7 @@ def send_post_request(pic_url, pk):
     """Send post request to pyramid app, to notify completion."""
     payload = {'url': pic_url, 'pk': pk}
     post_url = "http://landsat.club/done/"
-    r = requests.post(post_url, data=json.dumps(payload))
+    r = requests.post(post_url, data=payload)
     print "post request sent"
     return True
 
