@@ -76,16 +76,16 @@ def process(job):
 
     out = hello.generate_url(0, query_auth=False, force_http=True)
     print out
-    send_post_request(out)
-    return out
+    send_post_request(out, job['pk'])
+    return True
     
     # generates url that works for 1 hour
     # plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
 
 
-def send_post_request(pic_url):
+def send_post_request(pic_url, pk):
     """Send post request to pyramid app, to notify completion."""
-    payload = {'url': pic_url}
+    payload = {'url': pic_url, 'pk': pk}
     post_url = "http://landsat.club/done/"
     r = requests.post(post_url, data=json.dumps(payload))
     print "post request sent"
