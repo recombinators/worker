@@ -59,7 +59,7 @@ def checking_for_jobs():
         job_message = get_message(jobs_queue)
         if job_message:
             try:
-                job_attributes = get_attributes(job_message)
+                job_attributes = get_attributes(job_message[0])
                 write_activity('[{}] {}'.format(datetime.datetime.utcnow(),
                                                 job_attributes))
             except Exception as e:

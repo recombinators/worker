@@ -33,7 +33,7 @@ def get_message(queue, num_messages=1, visibility_timeout=300,
 def get_attributes(message):
     '''Return a dictionary of the message attributes.'''
     return {key: value['string_value']
-            for key, value in message[0].message_attributes.iteritems()}
+            for key, value in message.message_attributes.iteritems()}
 
 
 def delete_message_from_handle(conn, queue, message):
