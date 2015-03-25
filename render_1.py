@@ -76,10 +76,10 @@ def checking_for_jobs():
                 del_status = delete_message_from_handle(SQSconn,
                                                         jobs_queue,
                                                         job_message[0])
-                write_activity('[{}] Delete success is {}'
+                write_activity('[{}] Delete success = {}'
                                .format(datetime.datetime.utcnow(), del_status))
             except Exception as e:
-                write_activity('[{}] Delete success is {}'
+                write_activity('[{}] Delete success = {}'
                                .format(datetime.datetime.utcnow(), del_status))
                 write_activity('[{}] Delete message fail because {}'
                                .format(datetime.datetime.utcnow(), e.__doc__))
@@ -92,12 +92,12 @@ def checking_for_jobs():
 
             try:
                 proc_status = process(job_attributes)
-                write_activity('[{}] Job rocess success is {}'
+                write_activity('[{}] Job Process success = {}'
                                .format(datetime.datetime.utcnow(),
                                        proc_status))
             except Exception as e:
                 # If processing fails, send message to pyramid to update db
-                write_activity('[{}] Job process success is {}'
+                write_activity('[{}] Job process success = {}'
                                .format(datetime.datetime.utcnow(), False))
                 write_activity('[{}] Job process fail because {}'
                                .format(datetime.datetime.utcnow(), e.__doc__))
