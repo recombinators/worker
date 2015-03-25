@@ -84,7 +84,7 @@ def process(job):
 def send_post_request(pic_url, pk):
     """Send post request to pyramid app, to notify completion."""
     payload = {'url': pic_url, 'pk': pk}
-    post_url = "http://landsat.club/done/"
+    post_url = "http://landsat.club/done"
     requests.post(post_url, data=payload)
     print "post request sent"
     return True
