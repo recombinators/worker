@@ -10,9 +10,11 @@ import requests
 from sqs import (make_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
 from shutil import rmtree
-
-
-path = '/home/ubuntu/dl'
+import datetime
+os.getcwd()
+path_download = os.getcwd() + '/download'
+path_error_log = os.getcwd() + '/logs' + '/error_log.txt'
+path_activity_log = os.getcwd() + '/logs' + '/activity_log.txt'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
@@ -37,33 +39,64 @@ def main():
 
 def checking_for_jobs():
     '''Poll jobs queue for jobs.'''
-    SQSconn = make_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-    jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
-    while True:
-        job_message = get_message(jobs_queue)
-        if job_message:
-            job_attributes = get_attributes(job_message)
-            delete_message_from_handle(SQSconn, jobs_queue, job_message[0])
-            try:
-                process(job_attributes)
-            except:
-                # If processing fails, send message to pyramid to update db
-                print job_attributes
-                send_post_request(job_attributes['job_id'], 10)
+    with open(path_activity_log, 'a') as al:
+        SQSconn = make_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+        al.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                  SQSconn))
+        jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
+        al.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                  jobs_queue))
+        while True:
+            job_message = get_message(jobs_queue)
+            if job_message:
+                try:
+                    job_attributes = get_attributes(job_message)
+                    al.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                              job_attributes))
+                except Exception as e:
+                    al.write('[{}] Attribute retrieval fail because {}'
+                             .format(datetime.datetime.utcnow(), e))
+
+                try:
+                    delete_message_from_handle(SQSconn, jobs_queue, job_message[0])
+                    al.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                              job_attributes))
+                except Exception as e:
+                    al.write('[{}] Delete message fail because {}'
+                             .format(datetime.datetime.utcnow(), e))
+
+                try:
+                    status = process(job_attributes)
+                    al.write('[{}] Process success is {}'
+                             .format(datetime.datetime.utcnow(), status))
+                except Exception as e:
+                    # If processing fails, send message to pyramid to update db
+                    al.write('[{}] Process success is {}'
+                             .format(datetime.datetime.utcnow(), False))
+                    al.write('[{}] Job process fail because {}'
+                             .format(datetime.datetime.utcnow(), e))
+                    with open(path_error_log, 'a') as el:
+                        el.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                 job_attributes))
+                        el.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                 e.__doc__))
+                        el.write('[{}] {}'.format(datetime.datetime.utcnow(),
+                                 e.message))
+                    send_post_request(job_attributes['job_id'], 10)
 
 
 def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
 
     send_post_request(job['job_id'], 1)
-    b = Downloader(verbose=True, download_dir=path)
+    b = Downloader(verbose=True, download_dir=path_download)
     scene_id = [str(job['scene_id'])]
     bands = [job['band_1'], job['band_2'], job['band_3']]
     b.download(scene_id, bands)
-    input_path = os.path.join(path, scene_id[0])
+    input_path = os.path.join(path_download, scene_id[0])
 
     send_post_request(job['job_id'], 2)
-    c = Process(input_path, bands=bands, dst_path=path, verbose=True)
+    c = Process(input_path, bands=bands, dst_path=path_download, verbose=True)
     c.run(pansharpen=False)
 
     band_output = ''
