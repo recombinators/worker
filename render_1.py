@@ -46,9 +46,11 @@ def checking_for_jobs():
             delete_message_from_handle(SQSconn, jobs_queue, job_message[0])
             try:
                 process(job_attributes)
-            except:
+            except Exception as e:
                 # If processing fails, send message to pyramid to update db
                 print job_attributes
+                print e.__doc__
+                print e.message
                 send_post_request(job_attributes['job_id'], 10)
 
 
