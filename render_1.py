@@ -64,32 +64,49 @@ def checking_for_jobs():
                                                 job_attributes))
             except Exception as e:
                 write_activity('[{}] Attribute retrieval fail because {}'
-                               .format(datetime.datetime.utcnow(), e))
+                               .format(datetime.datetime.utcnow(), e.__doc__))
+                write_activity('[{}] Attribute retrieval fail because {}'
+                               .format(datetime.datetime.utcnow(), e.message))
+                write_error('[{}] Attribute retrieval fail because {}'
+                            .format(datetime.datetime.utcnow(), e.__doc__))
+                write_error('[{}] Attribute retrieval fail because {}'
+                            .format(datetime.datetime.utcnow(), e.message))
 
             try:
-                delete_message_from_handle(SQSconn, jobs_queue, job_message[0])
-                write_activity('[{}] {}'.format(datetime.datetime.utcnow(),
-                                                job_attributes))
+                del_status = delete_message_from_handle(SQSconn,
+                                                        jobs_queue,
+                                                        job_message[0])
+                write_activity('[{}] Delete success is {}'
+                               .format(datetime.datetime.utcnow(), del_status))
             except Exception as e:
+                write_activity('[{}] Delete success is {}'
+                               .format(datetime.datetime.utcnow(), del_status))
                 write_activity('[{}] Delete message fail because {}'
-                               .format(datetime.datetime.utcnow(), e))
+                               .format(datetime.datetime.utcnow(), e.__doc__))
+                write_activity('[{}] Delete message fail because {}'
+                               .format(datetime.datetime.utcnow(), e.message))
+                write_error('[{}] Delete message fail because {}'
+                            .format(datetime.datetime.utcnow(), e.__doc__))
+                write_error('[{}] Delete message fail because {}'
+                            .format(datetime.datetime.utcnow(), e.message))
 
             try:
-                status = process(job_attributes)
-                write_activity('[{}] Process success is {}'
-                               .format(datetime.datetime.utcnow(), status))
+                proc_status = process(job_attributes)
+                write_activity('[{}] Job rocess success is {}'
+                               .format(datetime.datetime.utcnow(),
+                                       proc_status))
             except Exception as e:
                 # If processing fails, send message to pyramid to update db
-                write_activity('[{}] Process success is {}'
+                write_activity('[{}] Job process success is {}'
                                .format(datetime.datetime.utcnow(), False))
                 write_activity('[{}] Job process fail because {}'
-                               .format(datetime.datetime.utcnow(), e))
-                write_error('[{}] {}'.format(datetime.datetime.utcnow(),
-                                             job_attributes))
-                write_error('[{}] {}'.format(datetime.datetime.utcnow(),
-                                             e.__doc__))
-                write_error('[{}] {}'.format(datetime.datetime.utcnow(),
-                                             e.message))
+                               .format(datetime.datetime.utcnow(), e.__doc__))
+                write_activity('[{}] Job process fail because {}'
+                               .format(datetime.datetime.utcnow(), e.message))
+                write_error('[{}] Job process fail because {}'
+                            .format(datetime.datetime.utcnow(), e.__doc__))
+                write_error('[{}] Job process fail because {}'
+                            .format(datetime.datetime.utcnow(), e.message))
                 send_post_request(job_attributes['job_id'], 10)
 
 
