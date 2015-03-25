@@ -29,8 +29,9 @@ def checking_for_jobs():
     jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
     while True:
         job_message = get_message(jobs_queue)
-        job_attributes = get_attributes(job_message)
-        success = process(job_attributes)
+        if job_message:
+            job_attributes = get_attributes(job_message)
+            success = process(job_attributes)
         if job_message and success:
             delete_message_from_handle(SQSconn, jobs_queue, job_message[0])
 
