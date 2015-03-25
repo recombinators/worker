@@ -11,10 +11,10 @@ from sqs import (make_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
 from shutil import rmtree
 import datetime
-
-path = '/home/landsatawsuser/dl'
-path_error_log = 'home/landsatawsuser/logs'
-path_activity_log = 'home/landsatawsuser/logs'
+os.getcwd()
+path_download = os.getcwd() + '/download'
+path_error_log = os.getcwd() + '/logs' + '/error_log.txt'
+path_activity_log = os.getcwd() + '/logs' + '/activity_log.txt'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
@@ -39,7 +39,7 @@ def main():
 
 def checking_for_jobs():
     '''Poll jobs queue for jobs.'''
-    with open('{}/activity_log.txt'.format(path_activity_log), 'a') as al:
+    with open(path_activity_log, 'a') as al:
         SQSconn = make_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
         al.write('[{}] {}'.format(datetime.datetime.utcnow(),
                                   SQSconn))
@@ -75,7 +75,7 @@ def checking_for_jobs():
                              .format(datetime.datetime.utcnow(), False))
                     al.write('[{}] Job process fail because {}'
                              .format(datetime.datetime.utcnow(), e))
-                    with open('{}/error_log.txt'.format(path_error_log), 'a') as el:
+                    with open(path_error_log, 'a') as el:
                         el.write('[{}] {}'.format(datetime.datetime.utcnow(),
                                  job_attributes))
                         el.write('[{}] {}'.format(datetime.datetime.utcnow(),
@@ -89,14 +89,14 @@ def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
 
     send_post_request(job['job_id'], 1)
-    b = Downloader(verbose=True, download_dir=path)
+    b = Downloader(verbose=True, download_dir=path_download)
     scene_id = [str(job['scene_id'])]
     bands = [job['band_1'], job['band_2'], job['band_3']]
     b.download(scene_id, bands)
-    input_path = os.path.join(path, scene_id[0])
+    input_path = os.path.join(path_download, scene_id[0])
 
     send_post_request(job['job_id'], 2)
-    c = Process(input_path, bands=bands, dst_path=path, verbose=True)
+    c = Process(input_path, bands=bands, dst_path=path_download, verbose=True)
     c.run(pansharpen=False)
 
     band_output = ''
