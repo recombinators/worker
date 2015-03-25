@@ -12,9 +12,9 @@ from sqs import (make_connection, get_queue, get_message, get_attributes,
 from shutil import rmtree
 import datetime
 
-path = '/home/ubuntu/dl'
-path_error_log = 'home/ubuntu/logs'
-path_activity_log = 'home/ubuntu/logs'
+path = '/home/landsatawsuser/dl'
+path_error_log = 'home/landsatawsuser/logs'
+path_activity_log = 'home/landsatawsuser/logs'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
