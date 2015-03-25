@@ -102,10 +102,8 @@ def process(job):
     # delete files
     try:
         rmtree(input_path)           # band images and composite
-        os.remove(file_location)        # zip file
     except OSError:
         print input_path
-        print file_location
         print 'error deleting files'
         pass
 
