@@ -9,6 +9,7 @@ import zipfile
 import requests
 from sqs import (make_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
+from shutil import rmtree
 
 
 path = '/home/ubuntu/dl'
@@ -96,7 +97,17 @@ def process(job):
     out = hello.generate_url(0, query_auth=False, force_http=True)
     print out
     send_post_request(job['pk'], 5, out)
+
+    # delete files
+    try:
+        rmtree(input_path)           # band images and composite
+        os.remove(file_location)        # zip file
+    except OSError:
+        print 'error deleting files'
+        pass
+
     return True
+
 
     # generates url that works for 1 hour
     # plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
