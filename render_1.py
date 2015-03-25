@@ -10,7 +10,7 @@ import requests
 from sqs import (make_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
 from shutil import rmtree
-
+import datetime
 
 path = '/home/ubuntu/dl'
 
@@ -48,9 +48,11 @@ def checking_for_jobs():
                 process(job_attributes)
             except Exception as e:
                 # If processing fails, send message to pyramid to update db
-                print job_attributes
-                print e.__doc__
-                print e.message
+                with open('error_log.txt', 'a') as el:
+                    el.wrote(datetime.datetime.utcnow())
+                    el.write(job_attributes)
+                    el.write(e.__doc__)
+                    el.write(e.message)
                 send_post_request(job_attributes['job_id'], 10)
 
 
