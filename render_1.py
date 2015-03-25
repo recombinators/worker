@@ -9,21 +9,41 @@ from boto.s3.key import Key
 import zipfile
 import requests
 import json
+import sqs
 
 
-# sceneID = ['LC80030172015001LGN00']
-sceneID = ['LC80460272015014LGN00']
-bands = [4, 3, 2]
+path = '/Users/chatzis/projects/landsatproject/landsat_worker/dl'
 
-path = '/home/ubuntu/dl'
-# sceneID='LC80030172015001LGN00'
+AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
+AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
+LANDSAT_JOBS_QUEUE = 'landsat_jobs_queue'
 
 
-def process():
-    """Given bands and sceneID, download, image process, zip & upload to S3."""
+def main():
+    checking_for_jobs()
+
+
+def checking_for_jobs():
+    '''Poll jobs queue for jobs.'''
+    conn = sqs.make_connection(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                               aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    jobs_queue = sqs.get_queue(LANDSAT_JOBS_QUEUE, conn)
+    while True:
+        job_message = sqs.get_message(jobs_queue)
+        if job_message:
+            job_attributes = sqs.get_attributes(job_message)
+            success = process(job_attributes)
+        if job_message and success:
+            sqs.delete_message_from_queue(job_message, jobs_queue)
+
+
+def process(job):
+    '''Given bands and sceneID, download, image process, zip & upload to S3.'''
     b = Downloader(verbose=True, download_dir=path)
-    b.download(sceneID, bands)
-    input_path = os.path.join(path, sceneID[0])
+    scene_id = [str(job['scene_id'])]
+    bands = [job['band_1'], job['band_2'], job['band_3']]
+    b.download(scene_id, bands)
+    input_path = os.path.join(path, scene_id[0])
 
     c = Process(input_path, bands=bands, dst_path=path, verbose=True)
     c.run(pansharpen=False)
@@ -32,18 +52,19 @@ def process():
 
     for i in bands:
         band_output = '{}{}'.format(band_output, i)
-    file_name = '{}_bands_{}.TIF'.format(sceneID[0], band_output)
+    file_name = '{}_bands_{}.TIF'.format(scene_id[0], band_output)
     file_location = os.path.join(input_path, file_name)
 
     # zip file, maintain location
-    file_name_zip = '{}_bands_{}.zip'.format(sceneID[0], band_output)
-    zf = zipfile.ZipFile(file_name_zip, 'w', zipfile.ZIP_DEFLATED)
-    zf.write(file_location)
-    zf.close()
+    file_name_zip = '{}_bands_{}.zip'.format(scene_id[0], band_output)
+    path_to_zip = os.path.join(input_path, file_name_zip)
+    with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
+        myzip.write(file_location)
 
     # upload to s3
-    file_location = os.path.join('/home/ubuntu/landsat_worker', file_name_zip)
-    conne = boto.connect_s3()
+    file_location = os.path.join(input_path, file_name_zip)
+    conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                            aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
     b = conne.get_bucket('landsatproject')
     k = Key(b)
     k.key = file_name_zip
@@ -61,8 +82,6 @@ def process():
     # generates url that works for 1 hour
     # plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
 
-process()
-
 
 def send_post_request(pic_url):
     """Send post request to pyramid app, to notify completion."""
@@ -70,3 +89,7 @@ def send_post_request(pic_url):
     post_url = "http://landsat.club/done/"
     r = requests.post(post_url, data=json.dumps(payload))
     print "post request sent"
+    return True
+
+if __name__ == '__main__':
+    main()
