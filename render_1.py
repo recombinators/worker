@@ -11,6 +11,7 @@ from sqs import (make_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
 from shutil import rmtree
 import datetime
+
 os.getcwd()
 path_download = os.getcwd() + '/download'
 path_error_log = os.getcwd() + '/logs' + '/error_log.txt'
@@ -22,13 +23,30 @@ JOBS_QUEUE = 'landsat_jobs_queue'
 REGION = 'us-west-2'
 
 
+def cleanup_downloads(folder_path):
+    '''Clean up download folder if process fails. Return True if download folder
+       empty'''
+    for file_object in os.listdir(folder_path):
+        file_object_path = os.path.join(folder_path, file_object)
+        if os.path.isfile(file_object_path):
+            os.remove(file_object_path)
+        else:
+            rmtree(file_object_path)
+    if not os.listdir(folder_path):
+        return True
+    else:
+        return False
+
+
 def write_activity(message):
+    '''Write to error log.'''
     fo = open(path_activity_log, 'a')
     fo.write(message + '\n')
     fo.close()
 
 
 def write_error(message):
+    '''Write to error log.'''
     fo = open(path_activity_log, 'a')
     fo.write(message + '\n')
     fo.close()
@@ -46,6 +64,7 @@ def send_post_request(job_id, status=10, pic_url=None):
 
 
 def main():
+    '''Main.'''
     checking_for_jobs()
 
 
@@ -107,6 +126,12 @@ def checking_for_jobs():
                             .format(datetime.datetime.utcnow(), e.__doc__))
                 write_error('[{}] Job process fail because {}'
                             .format(datetime.datetime.utcnow(), e.message))
+                cleanup_status = cleanup_downloads(path_download)
+                write_activity('[{}] Cleanup downloads success = {}'
+                               .format(datetime.datetime.utcnow(),
+                                       cleanup_status))
+                write_error('[{}] Cleanup downloads success = {}'
+                            .format(datetime.datetime.utcnow(), cleanup_status))
                 send_post_request(job_attributes['job_id'], 10)
 
 
