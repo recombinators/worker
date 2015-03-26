@@ -83,11 +83,7 @@ def checking_for_jobs():
                                                 job_attributes))
             except Exception as e:
                 write_activity('[{}] Attribute retrieval fail because {}'
-                               .format(datetime.datetime.utcnow(), e.__doc__))
-                write_activity('[{}] Attribute retrieval fail because {}'
                                .format(datetime.datetime.utcnow(), e.message))
-                write_error('[{}] Attribute retrieval fail because {}'
-                            .format(datetime.datetime.utcnow(), e.__doc__))
                 write_error('[{}] Attribute retrieval fail because {}'
                             .format(datetime.datetime.utcnow(), e.message))
 
@@ -101,11 +97,7 @@ def checking_for_jobs():
                 write_activity('[{}] Delete success = {}'
                                .format(datetime.datetime.utcnow(), del_status))
                 write_activity('[{}] Delete message fail because {}'
-                               .format(datetime.datetime.utcnow(), e.__doc__))
-                write_activity('[{}] Delete message fail because {}'
                                .format(datetime.datetime.utcnow(), e.message))
-                write_error('[{}] Delete message fail because {}'
-                            .format(datetime.datetime.utcnow(), e.__doc__))
                 write_error('[{}] Delete message fail because {}'
                             .format(datetime.datetime.utcnow(), e.message))
 
@@ -119,11 +111,7 @@ def checking_for_jobs():
                 write_activity('[{}] Job process success = {}'
                                .format(datetime.datetime.utcnow(), False))
                 write_activity('[{}] Job process fail because {}'
-                               .format(datetime.datetime.utcnow(), e.__doc__))
-                write_activity('[{}] Job process fail because {}'
                                .format(datetime.datetime.utcnow(), e.message))
-                write_error('[{}] Job process fail because {}'
-                            .format(datetime.datetime.utcnow(), e.__doc__))
                 write_error('[{}] Job process fail because {}'
                             .format(datetime.datetime.utcnow(), e.message))
                 cleanup_status = cleanup_downloads(path_download)
