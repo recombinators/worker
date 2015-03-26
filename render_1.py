@@ -7,7 +7,7 @@ import boto
 from boto.s3.key import Key
 import zipfile
 import requests
-from sqs import (make_connection, get_queue, get_message, get_attributes,
+from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
 from shutil import rmtree
 import datetime
@@ -70,7 +70,7 @@ def main():
 
 def checking_for_jobs():
     '''Poll jobs queue for jobs.'''
-    SQSconn = make_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
     write_activity('[{}] {}'.format(datetime.datetime.utcnow(), SQSconn))
     jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
     write_activity('[{}] {}'.format(datetime.datetime.utcnow(), jobs_queue))
