@@ -13,4 +13,4 @@ def send_post_request(job_id, status=10, pic_url=None):
     return True
 
 if __name__ == '__main__':
-    send_post_request(3, 5)
+    send_post_request(120, 5, 'http://develop.landsat.club/scene/LC80470272014274LGN00')

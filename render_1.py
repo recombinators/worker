@@ -25,7 +25,7 @@ REGION = 'us-west-2'
 def send_post_request(job_id, status=10, pic_url=None):
     """Send post request to pyramid app, to notify completion."""
     payload = {'url': pic_url, 'job_id': job_id, 'status': status}
-    post_url = "http://develop.landsat.club/done"
+    post_url = "http://ec2-54-187-23-197.us-west-2.compute.amazonaws.com/done"
     requests.post(post_url, data=payload)
     # print "post request sent to {}".format(post_url)
     if status == 5:
@@ -140,7 +140,6 @@ def process(job):
     except OSError:
         print input_path
         print 'error deleting files'
-        pass
 
     return True
 
