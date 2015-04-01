@@ -42,6 +42,37 @@ class Rendered_Model(Base):
     rendercount = Column(Integer, default=0)
     currentlyrend = Column(Boolean)
 
+    @classmethod
+    def update_p_url(cls, scene, band1, band2, band3, previewurl):
+        '''Method updates entry into db with preview url.'''
+        # Convert parameters into correct type
+        band1 = int(band1)
+        band2 = int(band2)
+        band3 = int(band3)
+        previewurl = u'{}'.format(previewurl)
+        try:
+            entry = DBSession.query(cls).filter(cls.entityid == scene,
+                                                cls.band1 == band1,
+                                                cls.band2 == band2,
+                                                cls.band3 == band3)
+            # if there is no existing entry, add it.
+            if entry.count() == 0:
+                new = Rendered_Model(
+                                     entityid=scene,
+                                     band1=band1,
+                                     band2=band2,
+                                     band3=band3,
+                                     previewurl=previewurl
+                                     )
+                DBSession.add(new)
+                # transaction.commit()
+            else:
+                entry.update({"previewurl": previewurl})
+                # transaction.commit()
+        except:
+            print 'could not add preview url to db'
+
+
 os.getcwd()
 path_download = os.getcwd() + '/download'
 path_error_log = os.getcwd() + '/logs' + '/error_log.txt'
@@ -82,7 +113,7 @@ def write_error(message):
     fo.close()
 
 
-def send_post_request(job_id, status=10, pic_url=None):
+def update_preview(job_id, status=10, pic_url=None):
     """Send post request to pyramid app, to notify completion."""
     payload = {'url': pic_url, 'job_id': job_id, 'status': status}
     post_url = "http://ec2-54-187-23-197.us-west-2.compute.amazonaws.com/done"
@@ -151,12 +182,11 @@ def checking_for_jobs():
                                        cleanup_status))
                 write_error('[{}] Cleanup downloads success = {}'
                             .format(datetime.datetime.utcnow(), cleanup_status))
-                send_post_request(job_attributes['job_id'], 10)
+                update_preview(job_attributes['job_id'], 10)
 
 
 def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
-
     b = Downloader(verbose=True, download_dir=path_download)
     scene_id = [str(job['scene_id'])]
     bands = [job['band_1'], job['band_2'], job['band_3']]
@@ -212,7 +242,8 @@ def process(job):
     out = hello.generate_url(0, query_auth=False, force_http=True)
     print out
 
-
+    Rendered_Model.update_p_url(scene_id, job['band_1'], job['band_2'],
+                                job['band_3'], out)
 
     # delete files
     try:
