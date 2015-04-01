@@ -10,7 +10,7 @@ import requests
 from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
 from shutil import rmtree
-import datetime
+from datetime import datetime
 from zope.sqlalchemy import ZopeTransactionExtension
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import create_engine
@@ -199,56 +199,56 @@ def main():
 def checking_for_jobs():
     '''Poll jobs queue for jobs.'''
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-    write_activity('[{}] {}'.format(datetime.datetime.utcnow(), SQSconn))
+    write_activity('[{}] {}'.format(datetime.utcnow(), SQSconn))
     jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
-    write_activity('[{}] {}'.format(datetime.datetime.utcnow(), jobs_queue))
+    write_activity('[{}] {}'.format(datetime.utcnow(), jobs_queue))
     while True:
         job_message = get_message(jobs_queue)
         if job_message:
             try:
                 job_attributes = get_attributes(job_message[0])
-                write_activity('[{}] {}'.format(datetime.datetime.utcnow(),
+                write_activity('[{}] {}'.format(datetime.utcnow(),
                                                 job_attributes))
             except Exception as e:
                 write_activity('[{}] Attribute retrieval fail because {}'
-                               .format(datetime.datetime.utcnow(), e.message))
+                               .format(datetime.utcnow(), e.message))
                 write_error('[{}] Attribute retrieval fail because {}'
-                            .format(datetime.datetime.utcnow(), e.message))
+                            .format(datetime.utcnow(), e.message))
 
             try:
                 del_status = delete_message_from_handle(SQSconn,
                                                         jobs_queue,
                                                         job_message[0])
                 write_activity('[{}] Delete success = {}'
-                               .format(datetime.datetime.utcnow(), del_status))
+                               .format(datetime.utcnow(), del_status))
             except Exception as e:
                 write_activity('[{}] Delete success = {}'
-                               .format(datetime.datetime.utcnow(), del_status))
+                               .format(datetime.utcnow(), del_status))
                 write_activity('[{}] Delete message fail because {}'
-                               .format(datetime.datetime.utcnow(), e.message))
+                               .format(datetime.utcnow(), e.message))
                 write_error('[{}] Delete message fail because {}'
-                            .format(datetime.datetime.utcnow(), e.message))
+                            .format(datetime.utcnow(), e.message))
 
             # Process full res images
             try:
                 proc_status = process(job_attributes)
                 write_activity('[{}] Job Process success = {}'
-                               .format(datetime.datetime.utcnow(),
+                               .format(datetime.utcnow(),
                                        proc_status))
             except Exception as e:
                 # If processing fails, send message to pyramid to update db
                 write_activity('[{}] Job process success = {}'
-                               .format(datetime.datetime.utcnow(), False))
+                               .format(datetime.utcnow(), False))
                 write_activity('[{}] Job process fail because {}'
-                               .format(datetime.datetime.utcnow(), e.message))
+                               .format(datetime.utcnow(), e.message))
                 write_error('[{}] Job process fail because {}'
-                            .format(datetime.datetime.utcnow(), e.message))
+                            .format(datetime.utcnow(), e.message))
                 cleanup_status = cleanup_downloads(path_download)
                 write_activity('[{}] Cleanup downloads success = {}'
-                               .format(datetime.datetime.utcnow(),
+                               .format(datetime.utcnow(),
                                        cleanup_status))
                 write_error('[{}] Cleanup downloads success = {}'
-                            .format(datetime.datetime.utcnow(), cleanup_status))
+                            .format(datetime.utcnow(), cleanup_status))
                 UserJob_Model.set_job_status(job_attributes['job_id'], 10)
 
 
