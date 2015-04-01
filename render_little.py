@@ -19,11 +19,12 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, UnicodeText, Boolean
+import transaction
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
-engine = create_engine(os.environ.get('DATABASE_URL'), 'sqlalchemy.')
+engine = create_engine(os.environ.get('DATABASE_URL'))
 DBSession.configure(bind=engine)
 Base.metadata.bind = engine
 
@@ -65,10 +66,10 @@ class Rendered_Model(Base):
                                      previewurl=previewurl
                                      )
                 DBSession.add(new)
-                # transaction.commit()
+                transaction.commit()
             else:
                 entry.update({"previewurl": previewurl})
-                # transaction.commit()
+                transaction.commit()
         except:
             print 'could not add preview url to db'
 
