@@ -191,17 +191,6 @@ def write_error(message):
     fo.close()
 
 
-def send_post_request(job_id, status=10, pic_url=None):
-    """Send post request to pyramid app, to notify completion."""
-    payload = {'url': pic_url, 'job_id': job_id, 'status': status}
-    post_url = "http://ec2-54-187-23-197.us-west-2.compute.amazonaws.com/done"
-    requests.post(post_url, data=payload)
-    # print "post request sent to {}".format(post_url)
-    if status == 5:
-        print 'job_id: {} done.'.format(job_id)
-    return True
-
-
 def main():
     '''Main.'''
     checking_for_jobs()
@@ -320,10 +309,6 @@ def process(job):
         print 'error deleting files'
 
     return True
-
-
-    # generates url that works for 1 hour
-    # plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
 
 if __name__ == '__main__':
     main()
