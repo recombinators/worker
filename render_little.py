@@ -14,6 +14,34 @@ from shutil import rmtree
 import datetime
 import subprocess
 
+from zope.sqlalchemy import ZopeTransactionExtension
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, UnicodeText, Boolean
+
+DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+Base = declarative_base()
+
+engine = create_engine(os.environ.get('DATABASE_URL'), 'sqlalchemy.')
+DBSession.configure(bind=engine)
+Base.metadata.bind = engine
+
+
+class Rendered_Model(Base):
+    '''Model for the already rendered files'''
+    __tablename__ = 'render_cache'
+    id = Column(Integer, primary_key=True)
+    jobid = Column(Integer)
+    entityid = Column(UnicodeText)
+    band1 = Column(Integer)
+    band2 = Column(Integer)
+    band3 = Column(Integer)
+    previewurl = Column(UnicodeText)
+    renderurl = Column(UnicodeText)
+    rendercount = Column(Integer, default=0)
+    currentlyrend = Column(Boolean)
+
 os.getcwd()
 path_download = os.getcwd() + '/download'
 path_error_log = os.getcwd() + '/logs' + '/error_log.txt'
