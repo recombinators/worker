@@ -159,7 +159,7 @@ path_activity_log = os.getcwd() + '/logs' + '/activity_log.txt'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
-JOBS_QUEUE = 'landsat_jobs_queue'
+JOBS_QUEUE = 'snapsat_render_queue'
 REGION = 'us-west-2'
 
 
