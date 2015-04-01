@@ -59,6 +59,7 @@ class Rendered_Model(Base):
         try:
             DBSession.query(cls).filter(cls.jobid == jobid).update({
                 "currentlyrend": currentlyrend, "renderurl": renderurl})
+            transaction.commit()
         except:
             print 'could not update db'
 
@@ -136,7 +137,7 @@ class UserJob_Model(Base):
                      10: "status10time"}
         try:
             current_time = datetime.utcnow()
-            DBSession.query(cls).filter(cls.jobid == jobid).update(
+            DBSession.query(cls).filter(cls.jobid == int(jobid)).update(
                                     {"jobstatus": status,
                                      table_key[int(status)]: current_time,
                                      "lastmodified": current_time
@@ -297,7 +298,7 @@ def process(job):
     # make public
     hello.set_canned_acl('public-read')
 
-    out = hello.generate_url(0, query_auth=False, force_http=True)
+    out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
     print out
     UserJob_Model.set_job_status(job['job_id'], 5, out)
 
