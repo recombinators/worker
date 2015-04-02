@@ -30,16 +30,17 @@ REGION = 'us-west-2'
 def cleanup_downloads(folder_path):
     '''Clean up download folder if process fails. Return True if download folder
        empty'''
-    for file_object in os.listdir(folder_path):
-        file_object_path = os.path.join(folder_path, file_object)
-        if os.path.isfile(file_object_path):
-            os.remove(file_object_path)
-        else:
-            rmtree(file_object_path)
-    if not os.listdir(folder_path):
-        return True
-    else:
-        return False
+    pass
+    # for file_object in os.listdir(folder_path):
+    #     file_object_path = os.path.join(folder_path, file_object)
+    #     if os.path.isfile(file_object_path):
+    #         os.remove(file_object_path)
+    #     else:
+    #         rmtree(file_object_path)
+    # if not os.listdir(folder_path):
+    #     return True
+    # else:
+    #     return False
 
 
 def write_activity(message):
@@ -89,7 +90,7 @@ def checking_for_jobs():
                 write_activity('[{}] Attribute retrieval fail because {}'
                                .format(datetime.utcnow(), e.message))
                 write_error('[{}] Attribute retrieval fail because {}'
-                            .format(datetime.datetime.utcnow(), e.message))
+                            .format(datetime.utcnow(), e.message))
                 write_activity('[{}] Attribute retrieval traceback: {}'
                                .format(datetime.utcnow(), sys.exc_info()))
                 write_error('[{}] Attribute retrieval traceback: {}'
@@ -128,7 +129,7 @@ def checking_for_jobs():
                 write_error('[{}] Job process fail because {}'
                             .format(datetime.utcnow(), e.message))
                 write_activity('[{}] Job proceess traceback: {}'
-                               .format(datetime.datetime.utcnow(), sys.exc_info()))
+                               .format(datetime.utcnow(), sys.exc_info()))
                 write_error('[{}] Job process traceback: {}'
                             .format(datetime.utcnow(), sys.exc_info()))
 
@@ -143,17 +144,18 @@ def checking_for_jobs():
 def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
     b = Downloader(verbose=True, download_dir=path_download)
-    scene_id = [str(job['scene_id'])]
+    scene_id = str(job['scene_id'])
     bands = [job['band_1'], job['band_2'], job['band_3']]
-    b.download(scene_id, bands)
+    b.download([scene_id], bands)
 
     input_path = os.path.join(path_download, scene_id)
 
     delete_me, rename_me = [], []
     # Resize each band
+
     for band in bands:
         # file_name = '{}/B{}-geo.TIF'.format(direc_scene, b)
-        file_name = '{}/{}_B{band}.TIF'.format(input_path, scene_id, band)
+        file_name = '{}/{}_B{}.TIF'.format(input_path, scene_id, band)
         delete_me.append(file_name)
         file_name2 = '{}.re'.format(file_name)
         rename_me.append(file_name2)
@@ -164,9 +166,8 @@ def process(job):
             # return out
             # raise Exception('Bad magic number')
     print 'done resizing 3 images'
-
     for i, o in zip(rename_me, delete_me):
-        os.remove(i)
+        os.remove(o)
         os.rename(i, o)
 
     c = Process(input_path, bands=bands, dst_path=path_download, verbose=True)
@@ -176,7 +177,7 @@ def process(job):
 
     for i in bands:
         band_output = '{}{}'.format(band_output, i)
-    file_name = '{}_bands_{}.TIF'.format(scene_id, band_output)
+    file_name = '{}_bands_{}.'.format(scene_id, band_output)
     file_location = os.path.join(input_path, file_name)
 
     # upload to s3
@@ -193,7 +194,7 @@ def process(job):
     # make public
     hello.set_canned_acl('public-read')
 
-    out = hello.generate_url(0, query_auth=False, force_http=True)
+    out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
     print out
 
     Rendered_Model.update_p_url(scene_id, job['band_1'], job['band_2'],

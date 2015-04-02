@@ -77,9 +77,9 @@ def checking_for_jobs():
                 write_error('[{}] Attribute retrieval fail because {}'
                             .format(datetime.utcnow(), e.message))
                 write_activity('[{}] Attribute retrieval traceback: {}'
-                               .format(datetime.datetime.utcnow(), sys.exc_info()))
+                               .format(datetime.utcnow(), sys.exc_info()))
                 write_error('[{}] Attribute retrieval traceback: {}'
-                            .format(datetime.datetime.utcnow(), sys.exc_info()))
+                            .format(datetime.utcnow(), sys.exc_info()))
 
             try:
                 del_status = delete_message_from_handle(SQSconn,
@@ -95,9 +95,9 @@ def checking_for_jobs():
                 write_error('[{}] Delete message fail because {}'
                             .format(datetime.utcnow(), e.message))
                 write_activity('[{}] Delete traceback: {}'
-                               .format(datetime.datetime.utcnow(), sys.exc_info()))
+                               .format(datetime.utcnow(), sys.exc_info()))
                 write_error('[{}] Delete traceback: {}'
-                            .format(datetime.datetime.utcnow(), sys.exc_info()))
+                            .format(datetime.utcnow(), sys.exc_info()))
 
             # Process full res images
             try:
@@ -114,9 +114,9 @@ def checking_for_jobs():
                 write_error('[{}] Job process fail because {}'
                             .format(datetime.utcnow(), e.message))
                 write_activity('[{}] Job proceess traceback: {}'
-                               .format(datetime.datetime.utcnow(), sys.exc_info()))
+                               .format(datetime.utcnow(), sys.exc_info()))
                 write_error('[{}] Job process traceback: {}'
-                            .format(datetime.datetime.utcnow(), sys.exc_info()))
+                            .format(datetime.utcnow(), sys.exc_info()))
 
                 cleanup_status = cleanup_downloads(path_download)
                 write_activity('[{}] Cleanup downloads success = {}'
@@ -132,10 +132,10 @@ def process(job):
 
     UserJob_Model.set_job_status(job['job_id'], 1)
     b = Downloader(verbose=True, download_dir=path_download)
-    scene_id = [str(job['scene_id'])]
+    scene_id = str(job['scene_id'])
     bands = [job['band_1'], job['band_2'], job['band_3']]
-    b.download(scene_id, bands)
-    input_path = os.path.join(path_download, scene_id[0])
+    b.download([scene_id], bands)
+    input_path = os.path.join(path_download, scene_id)
 
     UserJob_Model.set_job_status(job['job_id'], 2)
     c = Process(input_path, bands=bands, dst_path=path_download, verbose=True)
@@ -143,15 +143,15 @@ def process(job):
 
     band_output = ''
 
-    for i in bands:
-        band_output = '{}{}'.format(band_output, i)
-    file_name = '{}_bands_{}.TIF'.format(scene_id[0], band_output)
+    for band in bands:
+        band_output = '{}{}'.format(band_output, band)
+    file_name = '{}_bands_{}.TIF'.format(scene_id, band_output)
     file_location = os.path.join(input_path, file_name)
 
     # zip file, maintain location
     print 'Zipping file'
     UserJob_Model.set_job_status(job['job_id'], 3)
-    file_name_zip = '{}_bands_{}.zip'.format(scene_id[0], band_output)
+    file_name_zip = '{}_bands_{}.zip'.format(scene_id, band_output)
     path_to_zip = os.path.join(input_path, file_name_zip)
     with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
         myzip.write(file_location)
