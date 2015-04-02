@@ -43,7 +43,7 @@ def cleanup_downloads(folder_path):
 
 
 def write_activity(message):
-    '''Write to error log.'''
+    '''Write to activity log.'''
     fo = open(path_activity_log, 'a')
     fo.write(message + '\n')
     fo.close()
