@@ -44,14 +44,14 @@ def cleanup_downloads(folder_path):
 
 def write_activity(message):
     '''Write to error log.'''
-    fo = open(path_error_log, 'a')
+    fo = open(path_activity_log, 'a')
     fo.write(message + '\n')
     fo.close()
 
 
 def write_error(message):
     '''Write to error log.'''
-    fo = open(path_activity_log, 'a')
+    fo = open(path_error_log, 'a')
     fo.write(message + '\n')
     fo.close()
 
