@@ -21,7 +21,7 @@ import transaction
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
-engine = create_engine(os.environ.get('DATABASE_URL'))
+engine = create_engine(os.environ.get('db_url'))
 DBSession.configure(bind=engine)
 Base.metadata.bind = engine
 
