@@ -85,11 +85,13 @@ class Rendered_Model(Base):
 
 class UserJob_Model(Base):
     '''Model for the user job queue. Possible job statuses:
-    0 - Created
-    1 - Queued
-    2 - Processing
-    3 - Done (Failed)
-    4 - Done (Success)
+        - 0 Created
+        - 1 Downloading
+        - 2 Processing
+        - 3 Compressing
+        - 4 Uploading to S3
+        - 5 Done (Success)
+        - 10 Done (Failed)
     '''
 
     __tablename__ = 'user_job'

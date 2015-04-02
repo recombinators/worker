@@ -1,6 +1,6 @@
 import sys
 sys.path.append('landsat-util/landsat')
-from downloader import Downloader
+from landsat.downloader import Downloader
 from image import Process
 import os
 import boto
@@ -14,9 +14,9 @@ from db_sql import (Rendered_Model, UserJob_Model)
 
 
 os.getcwd()
-path_download = os.getcwd() + '/download'
-path_error_log = os.getcwd() + '/logs' + '/error_log.txt'
-path_activity_log = os.getcwd() + '/logs' + '/activity_log.txt'
+PATH_DOWNLOAD = os.getcwd() + '/download'
+PATH_ERROR_LOG = os.getcwd() + '/logs' + '/error_log.txt'
+PATH_ACTIVITY_LOG = os.getcwd() + '/logs' + '/activity_log.txt'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
@@ -41,14 +41,14 @@ def cleanup_downloads(folder_path):
 
 def write_activity(message):
     '''Write to activity log.'''
-    fo = open(path_activity_log, 'a')
+    fo = open(PATH_ACTIVITY_LOG, 'a')
     fo.write(message + '\n')
     fo.close()
 
 
 def write_error(message):
     '''Write to error log.'''
-    fo = open(path_error_log, 'a')
+    fo = open(PATH_ERROR_LOG, 'a')
     fo.write(message + '\n')
     fo.close()
 
@@ -60,7 +60,9 @@ def main():
 
 def checking_for_jobs():
     '''Poll jobs queue for jobs.'''
-    SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    SQSconn = make_SQS_connection(REGION,
+                                  AWS_ACCESS_KEY_ID,
+                                  AWS_SECRET_ACCESS_KEY)
     write_activity('[{}] {}'.format(datetime.utcnow(), SQSconn))
     jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
     write_activity('[{}] {}'.format(datetime.utcnow(), jobs_queue))
@@ -118,7 +120,7 @@ def checking_for_jobs():
                 write_error('[{}] Job process traceback: {}'
                             .format(datetime.utcnow(), sys.exc_info()))
 
-                cleanup_status = cleanup_downloads(path_download)
+                cleanup_status = cleanup_downloads(PATH_DOWNLOAD)
                 write_activity('[{}] Cleanup downloads success = {}'
                                .format(datetime.utcnow(),
                                        cleanup_status))
@@ -127,18 +129,24 @@ def checking_for_jobs():
                 UserJob_Model.set_job_status(job_attributes['job_id'], 10)
 
 
-def process(job):
-    '''Given bands and sceneID, download, image process, zip & upload to S3.'''
-
+def download_and_set(job, PATH_DOWNLOAD):
+    """Download the image file"""
     UserJob_Model.set_job_status(job['job_id'], 1)
-    b = Downloader(verbose=True, download_dir=path_download)
+    b = Downloader(verbose=False, download_dir=PATH_DOWNLOAD)
     scene_id = str(job['scene_id'])
     bands = [job['band_1'], job['band_2'], job['band_3']]
     b.download([scene_id], bands)
-    input_path = os.path.join(path_download, scene_id)
+    input_path = os.path.join(PATH_DOWNLOAD, scene_id)
+    return input_path, bands, scene_id
+
+
+def process(job):
+    '''Given bands and sceneID, download, image process, zip & upload to S3.'''
+
+    input_path, bands, scene_id = download_and_set(job, PATH_DOWNLOAD)
 
     UserJob_Model.set_job_status(job['job_id'], 2)
-    c = Process(input_path, bands=bands, dst_path=path_download, verbose=True)
+    c = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD, verbose=True)
     c.run(pansharpen=False)
 
     band_output = ''

@@ -4,6 +4,7 @@ import pytest
 from landsat_worker import render_1, db_sql
 from sqlalchemy import create_engine
 from datetime import datetime
+import mock
 
 
 @pytest.fixture(scope='session')
@@ -28,14 +29,11 @@ def db_session(request, connection):
     from landsat_worker.db_sql import DBSession
     return DBSession
 
-
-def test_db_lookup(db_session):
-    model_instance = db_sql.UserJob_Model(jobstatus=0, starttime=datetime.utcnow(), lastmodified=datetime.utcnow())
-    db_session.add(model_instance)
-    db_session.flush()
-
-    assert 1 == db_session.query(db_sql.UserJob_Model).count()
+@pytest.fixture
+def fake_job1()
 
 
-def test_db_is_rolled_back(db_session):
-    assert 0 == db_session.query(db_sql.UserJob_Model).count()
+class TestProcess():
+
+    def test_download_returns_correct_values():
+        
