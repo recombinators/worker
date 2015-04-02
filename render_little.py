@@ -137,8 +137,7 @@ def process(job):
 
     input_path = os.path.join(path_download, scene_id)
 
-    delete_me = []
-    rename_me = []
+    delete_me, rename_me = [], []
     # Resize each band
     for band in bands:
         # file_name = '{}/B{}-geo.TIF'.format(direc_scene, b)
