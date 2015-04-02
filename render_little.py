@@ -102,7 +102,7 @@ def cleanup_downloads(folder_path):
 
 def write_activity(message):
     '''Write to error log.'''
-    fo = open(path_activity_log, 'a')
+    fo = open(path_error_log, 'a')
     fo.write(message + '\n')
     fo.close()
 
@@ -148,6 +148,10 @@ def checking_for_jobs():
                                .format(datetime.datetime.utcnow(), e.message))
                 write_error('[{}] Attribute retrieval fail because {}'
                             .format(datetime.datetime.utcnow(), e.message))
+                write_activity('[{}] Attribute retrieval traceback: {}'
+                               .format(datetime.datetime.utcnow(), sys.exc_info()))
+                write_error('[{}] Attribute retrieval traceback: {}'
+                            .format(datetime.datetime.utcnow(), sys.exc_info()))
 
             try:
                 del_status = delete_message_from_handle(SQSconn,
@@ -162,6 +166,10 @@ def checking_for_jobs():
                                .format(datetime.datetime.utcnow(), e.message))
                 write_error('[{}] Delete message fail because {}'
                             .format(datetime.datetime.utcnow(), e.message))
+                write_activity('[{}] Delete traceback: {}'
+                               .format(datetime.datetime.utcnow(), sys.exc_info()))
+                write_error('[{}] Delete traceback: {}'
+                            .format(datetime.datetime.utcnow(), sys.exc_info()))
 
             # Process full res images
             try:
@@ -177,13 +185,17 @@ def checking_for_jobs():
                                .format(datetime.datetime.utcnow(), e.message))
                 write_error('[{}] Job process fail because {}'
                             .format(datetime.datetime.utcnow(), e.message))
+                write_activity('[{}] Job proceess traceback: {}'
+                               .format(datetime.datetime.utcnow(), sys.exc_info()))
+                write_error('[{}] Job process traceback: {}'
+                            .format(datetime.datetime.utcnow(), sys.exc_info()))
+
                 cleanup_status = cleanup_downloads(path_download)
                 write_activity('[{}] Cleanup downloads success = {}'
                                .format(datetime.datetime.utcnow(),
                                        cleanup_status))
                 write_error('[{}] Cleanup downloads success = {}'
                             .format(datetime.datetime.utcnow(), cleanup_status))
-                update_preview(job_attributes['job_id'], 10)
 
 
 def process(job):
