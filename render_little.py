@@ -203,8 +203,8 @@ def process(job):
     out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
     print out
 
-    Rendered_Model.update_p_url(unicode(scene_id), job['band_1'], job['band_2'],
-                                job['band_3'], out)
+    Rendered_Model.update_p_url(unicode(scene_id), job['band_1'],
+                                job['band_2'], job['band_3'], out)
 
     # delete files
     try:
