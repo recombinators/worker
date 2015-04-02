@@ -11,67 +11,9 @@ import requests
 from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
 from shutil import rmtree
-import datetime
+from datetime import datetime
 import subprocess
-
-from zope.sqlalchemy import ZopeTransactionExtension
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, UnicodeText, Boolean
-import transaction
-
-DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
-Base = declarative_base()
-
-engine = create_engine(os.environ.get('DATABASE_URL'))
-DBSession.configure(bind=engine)
-Base.metadata.bind = engine
-
-
-class Rendered_Model(Base):
-    '''Model for the already rendered files'''
-    __tablename__ = 'render_cache'
-    id = Column(Integer, primary_key=True)
-    jobid = Column(Integer)
-    entityid = Column(UnicodeText)
-    band1 = Column(Integer)
-    band2 = Column(Integer)
-    band3 = Column(Integer)
-    previewurl = Column(UnicodeText)
-    renderurl = Column(UnicodeText)
-    rendercount = Column(Integer, default=0)
-    currentlyrend = Column(Boolean)
-
-    @classmethod
-    def update_p_url(cls, scene, band1, band2, band3, previewurl):
-        '''Method updates entry into db with preview url.'''
-        # Convert parameters into correct type
-        band1 = int(band1)
-        band2 = int(band2)
-        band3 = int(band3)
-        previewurl = u'{}'.format(previewurl)
-        try:
-            entry = DBSession.query(cls).filter(cls.entityid == scene,
-                                                cls.band1 == band1,
-                                                cls.band2 == band2,
-                                                cls.band3 == band3)
-            # if there is no existing entry, add it.
-            if entry.count() == 0:
-                new = Rendered_Model(
-                                     entityid=scene,
-                                     band1=band1,
-                                     band2=band2,
-                                     band3=band3,
-                                     previewurl=previewurl
-                                     )
-                DBSession.add(new)
-                transaction.commit()
-            else:
-                entry.update({"previewurl": previewurl})
-                transaction.commit()
-        except:
-            print 'could not add preview url to db'
+from db_sql import Rendered_Model
 
 
 os.getcwd()
@@ -133,69 +75,69 @@ def main():
 def checking_for_jobs():
     '''Poll jobs queue for jobs.'''
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-    write_activity('[{}] {}'.format(datetime.datetime.utcnow(), SQSconn))
+    write_activity('[{}] {}'.format(datetime.utcnow(), SQSconn))
     jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
-    write_activity('[{}] {}'.format(datetime.datetime.utcnow(), jobs_queue))
+    write_activity('[{}] {}'.format(datetime.utcnow(), jobs_queue))
     while True:
         job_message = get_message(jobs_queue)
         if job_message:
             try:
                 job_attributes = get_attributes(job_message[0])
-                write_activity('[{}] {}'.format(datetime.datetime.utcnow(),
+                write_activity('[{}] {}'.format(datetime.utcnow(),
                                                 job_attributes))
             except Exception as e:
                 write_activity('[{}] Attribute retrieval fail because {}'
-                               .format(datetime.datetime.utcnow(), e.message))
+                               .format(datetime.utcnow(), e.message))
                 write_error('[{}] Attribute retrieval fail because {}'
                             .format(datetime.datetime.utcnow(), e.message))
                 write_activity('[{}] Attribute retrieval traceback: {}'
-                               .format(datetime.datetime.utcnow(), sys.exc_info()))
+                               .format(datetime.utcnow(), sys.exc_info()))
                 write_error('[{}] Attribute retrieval traceback: {}'
-                            .format(datetime.datetime.utcnow(), sys.exc_info()))
+                            .format(datetime.utcnow(), sys.exc_info()))
 
             try:
                 del_status = delete_message_from_handle(SQSconn,
                                                         jobs_queue,
                                                         job_message[0])
                 write_activity('[{}] Delete success = {}'
-                               .format(datetime.datetime.utcnow(), del_status))
+                               .format(datetime.utcnow(), del_status))
             except Exception as e:
                 write_activity('[{}] Delete success = {}'
-                               .format(datetime.datetime.utcnow(), del_status))
+                               .format(datetime.utcnow(), del_status))
                 write_activity('[{}] Delete message fail because {}'
-                               .format(datetime.datetime.utcnow(), e.message))
+                               .format(datetime.utcnow(), e.message))
                 write_error('[{}] Delete message fail because {}'
-                            .format(datetime.datetime.utcnow(), e.message))
+                            .format(datetime.utcnow(), e.message))
                 write_activity('[{}] Delete traceback: {}'
-                               .format(datetime.datetime.utcnow(), sys.exc_info()))
+                               .format(datetime.utcnow(), sys.exc_info()))
                 write_error('[{}] Delete traceback: {}'
-                            .format(datetime.datetime.utcnow(), sys.exc_info()))
+                            .format(datetime.utcnow(), sys.exc_info()))
 
             # Process full res images
             try:
                 proc_status = process(job_attributes)
                 write_activity('[{}] Job Process success = {}'
-                               .format(datetime.datetime.utcnow(),
+                               .format(datetime.utcnow(),
                                        proc_status))
             except Exception as e:
                 # If processing fails, send message to pyramid to update db
                 write_activity('[{}] Job process success = {}'
-                               .format(datetime.datetime.utcnow(), False))
+                               .format(datetime.utcnow(), False))
                 write_activity('[{}] Job process fail because {}'
-                               .format(datetime.datetime.utcnow(), e.message))
+                               .format(datetime.utcnow(), e.message))
                 write_error('[{}] Job process fail because {}'
-                            .format(datetime.datetime.utcnow(), e.message))
+                            .format(datetime.utcnow(), e.message))
                 write_activity('[{}] Job proceess traceback: {}'
                                .format(datetime.datetime.utcnow(), sys.exc_info()))
                 write_error('[{}] Job process traceback: {}'
-                            .format(datetime.datetime.utcnow(), sys.exc_info()))
+                            .format(datetime.utcnow(), sys.exc_info()))
 
                 cleanup_status = cleanup_downloads(path_download)
                 write_activity('[{}] Cleanup downloads success = {}'
-                               .format(datetime.datetime.utcnow(),
+                               .format(datetime.utcnow(),
                                        cleanup_status))
                 write_error('[{}] Cleanup downloads success = {}'
-                            .format(datetime.datetime.utcnow(), cleanup_status))
+                            .format(datetime.utcnow(), cleanup_status))
 
 
 def process(job):
@@ -207,8 +149,7 @@ def process(job):
 
     input_path = os.path.join(path_download, scene_id)
 
-    delete_me = []
-    rename_me = []
+    delete_me, rename_me = [], []
     # Resize each band
     for band in bands:
         # file_name = '{}/B{}-geo.TIF'.format(direc_scene, b)
