@@ -131,7 +131,7 @@ def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
 
     UserJob_Model.set_job_status(job['job_id'], 1)
-    b = Downloader(verbose=True, download_dir=path_download)
+    b = Downloader(verbose=False, download_dir=path_download)
     scene_id = str(job['scene_id'])
     bands = [job['band_1'], job['band_2'], job['band_3']]
     b.download([scene_id], bands)

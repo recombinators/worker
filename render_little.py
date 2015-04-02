@@ -151,7 +151,7 @@ def process(job):
         print 'made directory'
 
 
-    b = Downloader(verbose=True, download_dir=path_download)
+    b = Downloader(verbose=False, download_dir=path_download)
     bands = [job['band_1'], job['band_2'], job['band_3']]
     b.download([scene_id], bands)
     print 'done downloading'
