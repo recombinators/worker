@@ -9,6 +9,7 @@ def make_SQS_connection(region_name, aws_access_key_id, aws_secret_access_key):
                              aws_access_key_id=aws_access_key_id,
                              aws_secret_access_key=aws_secret_access_key)
 
+
 def get_queue(conn, queue_name):
     '''Create a queue with the given name, or get an existing queue with that
        name from the AWS connection.'''
