@@ -13,65 +13,7 @@ from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
 from shutil import rmtree
 import datetime
 import subprocess
-
-from zope.sqlalchemy import ZopeTransactionExtension
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, UnicodeText, Boolean
-import transaction
-
-DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
-Base = declarative_base()
-
-engine = create_engine(os.environ.get('DATABASE_URL'))
-DBSession.configure(bind=engine)
-Base.metadata.bind = engine
-
-
-class Rendered_Model(Base):
-    '''Model for the already rendered files'''
-    __tablename__ = 'render_cache'
-    id = Column(Integer, primary_key=True)
-    jobid = Column(Integer)
-    entityid = Column(UnicodeText)
-    band1 = Column(Integer)
-    band2 = Column(Integer)
-    band3 = Column(Integer)
-    previewurl = Column(UnicodeText)
-    renderurl = Column(UnicodeText)
-    rendercount = Column(Integer, default=0)
-    currentlyrend = Column(Boolean)
-
-    @classmethod
-    def update_p_url(cls, scene, band1, band2, band3, previewurl):
-        '''Method updates entry into db with preview url.'''
-        # Convert parameters into correct type
-        band1 = int(band1)
-        band2 = int(band2)
-        band3 = int(band3)
-        previewurl = u'{}'.format(previewurl)
-        try:
-            entry = DBSession.query(cls).filter(cls.entityid == scene,
-                                                cls.band1 == band1,
-                                                cls.band2 == band2,
-                                                cls.band3 == band3)
-            # if there is no existing entry, add it.
-            if entry.count() == 0:
-                new = Rendered_Model(
-                                     entityid=scene,
-                                     band1=band1,
-                                     band2=band2,
-                                     band3=band3,
-                                     previewurl=previewurl
-                                     )
-                DBSession.add(new)
-                transaction.commit()
-            else:
-                entry.update({"previewurl": previewurl})
-                transaction.commit()
-        except:
-            print 'could not add preview url to db'
+from db_sql import *
 
 
 os.getcwd()
