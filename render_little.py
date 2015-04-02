@@ -142,12 +142,17 @@ def checking_for_jobs():
 
 def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
-    b = Downloader(verbose=True, download_dir=path_download)
     scene_id = str(job['scene_id'])
+    input_path = os.path.join(path_download, scene_id)
+
+    # Create a subdirectory
+    if not os.path.exists(input_path):
+        os.makedirs(input_path)
+
+
+    b = Downloader(verbose=True, download_dir=path_download)
     bands = [job['band_1'], job['band_2'], job['band_3']]
     b.download([scene_id], bands)
-
-    input_path = os.path.join(path_download, scene_id)
 
     delete_me, rename_me = [], []
     # Resize each band
