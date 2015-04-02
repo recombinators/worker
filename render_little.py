@@ -158,7 +158,6 @@ def process(job):
 
     delete_me, rename_me = [], []
     # Resize each band
-    import pdb; pdb.set_trace()
     for band in bands:
         # file_name = '{}/B{}-geo.TIF'.format(direc_scene, b)
         file_name = '{}/{}_B{}.TIF'.format(input_path, scene_id, band)
