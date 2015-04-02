@@ -148,11 +148,13 @@ def process(job):
     # Create a subdirectory
     if not os.path.exists(input_path):
         os.makedirs(input_path)
+        print 'made directory'
 
 
     b = Downloader(verbose=True, download_dir=path_download)
     bands = [job['band_1'], job['band_2'], job['band_3']]
     b.download([scene_id], bands)
+    print 'done downloading'
 
     delete_me, rename_me = [], []
     # Resize each band
