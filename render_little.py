@@ -30,17 +30,16 @@ REGION = 'us-west-2'
 def cleanup_downloads(folder_path):
     '''Clean up download folder if process fails. Return True if download folder
        empty'''
-    pass
-    # for file_object in os.listdir(folder_path):
-    #     file_object_path = os.path.join(folder_path, file_object)
-    #     if os.path.isfile(file_object_path):
-    #         os.remove(file_object_path)
-    #     else:
-    #         rmtree(file_object_path)
-    # if not os.listdir(folder_path):
-    #     return True
-    # else:
-    #     return False
+    for file_object in os.listdir(folder_path):
+        file_object_path = os.path.join(folder_path, file_object)
+        if os.path.isfile(file_object_path):
+            os.remove(file_object_path)
+        else:
+            rmtree(file_object_path)
+    if not os.listdir(folder_path):
+        return True
+    else:
+        return False
 
 
 def write_activity(message):
@@ -166,6 +165,7 @@ def process(job):
             # return out
             # raise Exception('Bad magic number')
     print 'done resizing 3 images'
+
     for i, o in zip(rename_me, delete_me):
         os.remove(o)
         os.rename(i, o)
@@ -177,28 +177,33 @@ def process(job):
 
     for i in bands:
         band_output = '{}{}'.format(band_output, i)
-    file_name = '{}_bands_{}.'.format(scene_id, band_output)
-    file_location = os.path.join(input_path, file_name)
+    file_name = '{}_bands_{}'.format(scene_id, band_output)
+    file_tif = '{}.TIF'.format(os.path.join(input_path, file_name))
+    file_location = '{}png'.format(file_tif[:-3])
+
+    # Convert black to transparent and save as PNG
+    subprocess.call(['convert', '-transparent', 'black',
+                    file_tif, file_location])
+    file_png = 'pre_{}.png'.format(file_name)
 
     # upload to s3
     print 'Uploading to S3'
-    file_location = os.path.join(input_path, file_name)
     conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
                             aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
     b = conne.get_bucket('landsatproject')
     k = Key(b)
-    k.key = 'pre_{}'.format(file_name)
+    k.key = file_png
     k.set_contents_from_filename(file_location)
     k.get_contents_to_filename(file_location)
-    hello = b.get_key('pre_{}'.format(file_name))
+    hello = b.get_key(file_png)
     # make public
     hello.set_canned_acl('public-read')
 
     out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
     print out
 
-    Rendered_Model.update_p_url(scene_id, job['band_1'], job['band_2'],
-                                job['band_3'], out)
+    Rendered_Model.update_p_url(unicode(scene_id), job['band_1'],
+                                job['band_2'], job['band_3'], out)
 
     # delete files
     try:
