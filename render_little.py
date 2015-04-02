@@ -89,7 +89,7 @@ def checking_for_jobs():
                 write_activity('[{}] Attribute retrieval fail because {}'
                                .format(datetime.utcnow(), e.message))
                 write_error('[{}] Attribute retrieval fail because {}'
-                            .format(datetime.datetime.utcnow(), e.message))
+                            .format(datetime.utcnow(), e.message))
                 write_activity('[{}] Attribute retrieval traceback: {}'
                                .format(datetime.utcnow(), sys.exc_info()))
                 write_error('[{}] Attribute retrieval traceback: {}'
@@ -128,7 +128,7 @@ def checking_for_jobs():
                 write_error('[{}] Job process fail because {}'
                             .format(datetime.utcnow(), e.message))
                 write_activity('[{}] Job proceess traceback: {}'
-                               .format(datetime.datetime.utcnow(), sys.exc_info()))
+                               .format(datetime.utcnow(), sys.exc_info()))
                 write_error('[{}] Job process traceback: {}'
                             .format(datetime.utcnow(), sys.exc_info()))
 
