@@ -30,17 +30,16 @@ REGION = 'us-west-2'
 def cleanup_downloads(folder_path):
     '''Clean up download folder if process fails. Return True if download folder
        empty'''
-    pass
-    # for file_object in os.listdir(folder_path):
-    #     file_object_path = os.path.join(folder_path, file_object)
-    #     if os.path.isfile(file_object_path):
-    #         os.remove(file_object_path)
-    #     else:
-    #         rmtree(file_object_path)
-    # if not os.listdir(folder_path):
-    #     return True
-    # else:
-    #     return False
+    for file_object in os.listdir(folder_path):
+        file_object_path = os.path.join(folder_path, file_object)
+        if os.path.isfile(file_object_path):
+            os.remove(file_object_path)
+        else:
+            rmtree(file_object_path)
+    if not os.listdir(folder_path):
+        return True
+    else:
+        return False
 
 
 def write_activity(message):
