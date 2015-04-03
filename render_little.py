@@ -30,17 +30,16 @@ REGION = 'us-west-2'
 def cleanup_downloads(folder_path):
     '''Clean up download folder if process fails. Return True if download folder
        empty'''
-    pass
-    # for file_object in os.listdir(folder_path):
-    #     file_object_path = os.path.join(folder_path, file_object)
-    #     if os.path.isfile(file_object_path):
-    #         os.remove(file_object_path)
-    #     else:
-    #         rmtree(file_object_path)
-    # if not os.listdir(folder_path):
-    #     return True
-    # else:
-    #     return False
+    for file_object in os.listdir(folder_path):
+        file_object_path = os.path.join(folder_path, file_object)
+        if os.path.isfile(file_object_path):
+            os.remove(file_object_path)
+        else:
+            rmtree(file_object_path)
+    if not os.listdir(folder_path):
+        return True
+    else:
+        return False
 
 
 def write_activity(message):
@@ -120,16 +119,22 @@ def checking_for_jobs():
 
 def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
-    b = Downloader(verbose=True, download_dir=path_download)
     scene_id = str(job['scene_id'])
+    input_path = os.path.join(path_download, scene_id)
+
+    # Create a subdirectory
+    if not os.path.exists(input_path):
+        os.makedirs(input_path)
+        print 'made directory'
+
+
+    b = Downloader(verbose=False, download_dir=path_download)
     bands = [job['band_1'], job['band_2'], job['band_3']]
     b.download([scene_id], bands)
-
-    input_path = os.path.join(path_download, scene_id)
+    print 'done downloading'
 
     delete_me, rename_me = [], []
     # Resize each band
-
     for band in bands:
         # file_name = '{}/B{}-geo.TIF'.format(direc_scene, b)
         file_name = '{}/{}_B{}.TIF'.format(input_path, scene_id, band)
@@ -160,8 +165,10 @@ def process(job):
     file_location = '{}png'.format(file_tif[:-3])
 
     # Convert black to transparent and save as PNG
-    subprocess.call(['convert', '-transparent', 'black',
-                    file_tif, file_location])
+    # subprocess.call(['convert', '-transparent', 'black',
+    #                 file_tif, file_location])
+    # convert from TIF to png
+    subprocess.call(['convert', file_tif, file_location])
     file_png = 'pre_{}.png'.format(file_name)
 
     # upload to s3
