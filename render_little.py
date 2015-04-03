@@ -180,7 +180,7 @@ def process(job):
     # subprocess.call(['convert', '-transparent', 'black',
     #                 file_tif, file_location])
     # convert from TIF to png
-    subprocess.call([file_tif, file_location])
+    subprocess.call(['convert', file_tif, file_location])
     file_png = 'pre_{}.png'.format(file_name)
 
     # upload to s3
