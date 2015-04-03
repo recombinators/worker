@@ -56,17 +56,6 @@ def write_error(message):
     fo.close()
 
 
-def update_preview(job_id, status=10, pic_url=None):
-    """Send post request to pyramid app, to notify completion."""
-    payload = {'url': pic_url, 'job_id': job_id, 'status': status}
-    post_url = "http://ec2-54-187-23-197.us-west-2.compute.amazonaws.com/done"
-    requests.post(post_url, data=payload)
-    # print "post request sent to {}".format(post_url)
-    if status == 5:
-        print 'job_id: {} done.'.format(job_id)
-    return True
-
-
 def main():
     '''Main.'''
     checking_for_jobs()
@@ -142,16 +131,22 @@ def checking_for_jobs():
 
 def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
-    b = Downloader(verbose=True, download_dir=path_download)
     scene_id = str(job['scene_id'])
+    input_path = os.path.join(path_download, scene_id)
+
+    # Create a subdirectory
+    if not os.path.exists(input_path):
+        os.makedirs(input_path)
+        print 'made directory'
+
+
+    b = Downloader(verbose=False, download_dir=path_download)
     bands = [job['band_1'], job['band_2'], job['band_3']]
     b.download([scene_id], bands)
-
-    input_path = os.path.join(path_download, scene_id)
+    print 'done downloading'
 
     delete_me, rename_me = [], []
     # Resize each band
-
     for band in bands:
         # file_name = '{}/B{}-geo.TIF'.format(direc_scene, b)
         file_name = '{}/{}_B{}.TIF'.format(input_path, scene_id, band)
@@ -182,8 +177,10 @@ def process(job):
     file_location = '{}png'.format(file_tif[:-3])
 
     # Convert black to transparent and save as PNG
-    subprocess.call(['convert', '-transparent', 'black',
-                    file_tif, file_location])
+    # subprocess.call(['convert', '-transparent', 'black',
+    #                 file_tif, file_location])
+    # convert from TIF to png
+    subprocess.call(['convert', file_tif, file_location])
     file_png = 'pre_{}.png'.format(file_name)
 
     # upload to s3

@@ -29,8 +29,14 @@ def db_session(request, connection):
     from landsat_worker.db_sql import DBSession
     return DBSession
 
-@pytest.fixture
-def fake_job1()
+@pytest.fixture(scope='module')
+def fake_job1(request):
+    model_instance = db_sql.UserJob_Model(jobstatus=0,
+                                          starttime=datetime.utcnow(),
+                                          lastmodified=datetime.utcnow())
+    db_session.add(model_instance)
+    db_session.flush()
+
 
 
 class TestProcess():
