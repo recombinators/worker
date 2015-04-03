@@ -57,17 +57,6 @@ def write_error(message):
     fo.close()
 
 
-def update_preview(job_id, status=10, pic_url=None):
-    """Send post request to pyramid app, to notify completion."""
-    payload = {'url': pic_url, 'job_id': job_id, 'status': status}
-    post_url = "http://ec2-54-187-23-197.us-west-2.compute.amazonaws.com/done"
-    requests.post(post_url, data=payload)
-    # print "post request sent to {}".format(post_url)
-    if status == 5:
-        print 'job_id: {} done.'.format(job_id)
-    return True
-
-
 def main():
     '''Main.'''
     checking_for_jobs()
@@ -101,12 +90,10 @@ def checking_for_jobs():
                                                         job_message[0])
                 write_activity('Delete success = {}'.format(del_status))
             except Exception as e:
-                write_activity('Delete success = {}'
-                               .format(del_status))
+                write_activity('Delete success = {}'.format(del_status))
                 write_activity('Delete message fail because {}'
                                .format(e.message))
-                write_error('Delete message fail because {}'
-                            .format(e.message))
+                write_error('Delete message fail because {}'.format(e.message))
                 write_activity('Delete traceback: {}'.format(sys.exc_info()))
                 write_error('Delete traceback: {}'.format(sys.exc_info()))
 
@@ -122,8 +109,7 @@ def checking_for_jobs():
                 write_error('Job process fail because {}'.format(e.message))
                 write_activity('Job proceess traceback: {}'
                                .format(sys.exc_info()))
-                write_error('Job process traceback: {}'
-                            .format(sys.exc_info()))
+                write_error('Job process traceback: {}'.format(sys.exc_info()))
 
                 cleanup_status = cleanup_downloads(path_download)
                 write_activity('Cleanup downloads success = {}'
