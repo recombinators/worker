@@ -28,8 +28,8 @@ REGION = 'us-west-2'
 
 
 def cleanup_downloads(folder_path):
-    '''Clean up download folder if process fails. Return True if download folder
-       empty'''
+    """Clean up download folder if process fails. Return True if download folder
+       empty"""
     for file_object in os.listdir(folder_path):
         file_object_path = os.path.join(folder_path, file_object)
         if os.path.isfile(file_object_path):
@@ -43,27 +43,28 @@ def cleanup_downloads(folder_path):
 
 
 def write_activity(message):
-    '''Write to activity log.'''
+    """Write to activity log."""
     fo = open(path_activity_log, 'a')
     fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
     fo.close()
 
 
 def write_error(message):
-    '''Write to error log.'''
+    """Write to error log."""
     fo = open(path_error_log, 'a')
     fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
     fo.close()
 
 
 def main():
-    '''Main.'''
+    """Main."""
     checking_for_jobs()
 
 
 def checking_for_jobs():
-    '''Poll jobs queue for jobs.'''
-    SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    """Poll jobs queue for jobs."""
+    SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
+                                  AWS_SECRET_ACCESS_KEY)
     write_activity(SQSconn)
     jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
     write_activity(jobs_queue)
@@ -118,7 +119,7 @@ def checking_for_jobs():
 
 
 def process(job):
-    '''Given bands and sceneID, download, image process, zip & upload to S3.'''
+    """Given bands and sceneID, download, image process, zip & upload to S3."""
     scene_id = str(job['scene_id'])
     input_path = os.path.join(path_download, scene_id)
 
@@ -127,11 +128,13 @@ def process(job):
         os.makedirs(input_path)
         print 'made directory'
 
-
-    b = Downloader(verbose=False, download_dir=path_download)
-    bands = [job['band_1'], job['band_2'], job['band_3']]
-    b.download([scene_id], bands)
-    print 'done downloading'
+    try:
+        b = Downloader(verbose=False, download_dir=path_download)
+        bands = [job['band_1'], job['band_2'], job['band_3']]
+        b.download([scene_id], bands)
+        print 'done downloading'
+    except:
+        raise Exception('Download failed')
 
     delete_me, rename_me = [], []
     # Resize each band
@@ -144,49 +147,52 @@ def process(job):
         subprocess.call(['gdal_translate', '-outsize', '10%', '10%',
                          file_name, file_name2])
         if not os.path.exists(file_name2):
-            out = u'https://raw.githubusercontent.com/recombinators/little-worker/master/failimages/badmagicnumber.png'
-            # return out
-            # raise Exception('Bad magic number')
+            raise Exception('gdal_translate did not downsize images')
     print 'done resizing 3 images'
 
+    # remove original band files and rename downsized to correct name
     for i, o in zip(rename_me, delete_me):
         os.remove(o)
         os.rename(i, o)
 
-    c = Process(input_path, bands=bands, dst_path=path_download, verbose=True)
-    c.run(pansharpen=False)
+    # call landsat-util to merge images
+    try:
+        processor = Process(input_path, bands=bands, dst_path=path_download,
+                            verbose=True)
+        processor.run(pansharpen=False)
+    except:
+        raise Exception('Processing/landsat-util failed')
 
     band_output = ''
-
     for i in bands:
         band_output = '{}{}'.format(band_output, i)
     file_name = '{}_bands_{}'.format(scene_id, band_output)
     file_tif = '{}.TIF'.format(os.path.join(input_path, file_name))
     file_location = '{}png'.format(file_tif[:-3])
 
-    # Convert black to transparent and save as PNG
-    # subprocess.call(['convert', '-transparent', 'black',
-    #                 file_tif, file_location])
     # convert from TIF to png
     subprocess.call(['convert', file_tif, file_location])
     file_png = 'pre_{}.png'.format(file_name)
 
     # upload to s3
-    print 'Uploading to S3'
-    conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
-                            aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-    b = conne.get_bucket('landsatproject')
-    k = Key(b)
-    k.key = file_png
-    k.set_contents_from_filename(file_location)
-    k.get_contents_to_filename(file_location)
-    hello = b.get_key(file_png)
-    # make public
-    hello.set_canned_acl('public-read')
+    try:
+        print 'Uploading to S3'
+        conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        b = conne.get_bucket('landsatproject')
+        k = Key(b)
+        k.key = file_png
+        k.set_contents_from_filename(file_location)
+        k.get_contents_to_filename(file_location)
+        hello = b.get_key(file_png)
+        # make public
+        hello.set_canned_acl('public-read')
+        out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
+        print out
+    except:
+        raise Exception('S3 Upload failed')
 
-    out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
-    print out
-
+    # store url in db
     Rendered_Model.update_p_url(unicode(scene_id), job['band_1'],
                                 job['band_2'], job['band_3'], out)
 
