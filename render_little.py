@@ -56,17 +56,6 @@ def write_error(message):
     fo.close()
 
 
-def update_preview(job_id, status=10, pic_url=None):
-    """Send post request to pyramid app, to notify completion."""
-    payload = {'url': pic_url, 'job_id': job_id, 'status': status}
-    post_url = "http://ec2-54-187-23-197.us-west-2.compute.amazonaws.com/done"
-    requests.post(post_url, data=payload)
-    # print "post request sent to {}".format(post_url)
-    if status == 5:
-        print 'job_id: {} done.'.format(job_id)
-    return True
-
-
 def main():
     '''Main.'''
     checking_for_jobs()
@@ -188,8 +177,10 @@ def process(job):
     file_location = '{}png'.format(file_tif[:-3])
 
     # Convert black to transparent and save as PNG
-    subprocess.call(['convert', '-transparent', 'black',
-                    file_tif, file_location])
+    # subprocess.call(['convert', '-transparent', 'black',
+    #                 file_tif, file_location])
+    # convert from TIF to png
+    subprocess.call([file_tif, file_location])
     file_png = 'pre_{}.png'.format(file_name)
 
     # upload to s3
