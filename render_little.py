@@ -206,4 +206,5 @@ def process(job):
     return True
 
 if __name__ == '__main__':
-    main()
+    Rendered_Model.update_p_url(u'123', 1, 2, 3, 'test')
+    # main()

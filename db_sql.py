@@ -64,9 +64,13 @@ class Rendered_Model(Base):
             entry = DBSession.query(cls).filter(cls.entityid == scene,
                                                 cls.band1 == band1,
                                                 cls.band2 == band2,
-                                                cls.band3 == band3)
+                                                cls.band3 == band3).first()
+            # update entry if already exists,
             # if there is no existing entry, add it.
-            if entry.count() == 0:
+            if entry:
+                entry.update({"previewurl": previewurl})
+                transaction.commit()
+            else:
                 new = Rendered_Model(
                                      entityid=scene,
                                      band1=band1,
@@ -75,9 +79,6 @@ class Rendered_Model(Base):
                                      previewurl=previewurl
                                      )
                 DBSession.add(new)
-                transaction.commit()
-            else:
-                entry.update({"previewurl": previewurl})
                 transaction.commit()
         except:
             print 'could not add preview url to db'
