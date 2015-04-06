@@ -29,6 +29,7 @@ def db_session(request, connection):
     from landsat_worker.db_sql import DBSession
     return DBSession
 
+
 @pytest.fixture(scope='module')
 def fake_job1(request):
     model_instance = db_sql.UserJob_Model(jobstatus=0,
@@ -38,8 +39,13 @@ def fake_job1(request):
     db_session.flush()
 
 
-
-class TestProcess():
+class TestProcess(fake_job1):
+    fake_job_message = {u'job_id': u'1',
+                        u'band_2': u'3',
+                        u'band_3': u'2',
+                        u'band_1': u'4',
+                        u'scene_id': u'LC80470272015005LGN00',
+                        u'email': u'test@test.com'}
 
     def test_download_returns_correct_values():
-        
+        render_1.download_and_set(fake_job_message)

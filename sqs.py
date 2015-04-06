@@ -116,10 +116,12 @@ if __name__ == '__main__':
     queue = get_queue(conn, LANDSAT_JOBS_QUEUE)
     message = build_job_message(job_id=1, email='test@test.com', scene_id='LC80470272015005LGN00',
                                 band_1=4, band_2=3, band_3=2)
+    print("here's the message: %s" % message)
     send_message(conn, queue, message['body'], message['attributes'])
     print(queue_size(queue))
     message = get_message(queue)
-    attrs = get_attributes(message)
+    print message[0]
+    attrs = get_attributes(message[0])
     print(attrs)
     print(delete_message_from_handle(conn, queue, message[0]))
     print(queue_size(queue))
