@@ -15,7 +15,7 @@ DBSession.configure(bind=engine)
 Base.metadata.bind = engine
 
 
-class Rendered_Model(Base):
+class RenderCache_Model(Base):
     '''Model for the already rendered files'''
     __tablename__ = 'render_cache'
     id = Column(Integer, primary_key=True)
@@ -33,12 +33,12 @@ class Rendered_Model(Base):
     def add(cls, jobid, currentlyrend):
         '''Method adds entry into db given jobid and optional url.'''
         jobQuery = DBSession.query(UserJob_Model).get(jobid)
-        job = Rendered_Model(entityid=jobQuery.entityid,
-                             jobid=jobid,
-                             band1=jobQuery.band1,
-                             band2=jobQuery.band2,
-                             band3=jobQuery.band3,
-                             currentlyrend=currentlyrend)
+        job = RenderCache_Model(entityid=jobQuery.entityid,
+                                jobid=jobid,
+                                band1=jobQuery.band1,
+                                band2=jobQuery.band2,
+                                band3=jobQuery.band3,
+                                currentlyrend=currentlyrend)
         DBSession.add(job)
         transaction.commit()
 
@@ -69,12 +69,12 @@ class Rendered_Model(Base):
                 entry.update({"previewurl": previewurl})
                 transaction.commit()
             else:
-                new = Rendered_Model(entityid=scene,
-                                     band1=band1,
-                                     band2=band2,
-                                     band3=band3,
-                                     previewurl=previewurl
-                                     )
+                new = RenderCache_Model(entityid=scene,
+                                        band1=band1,
+                                        band2=band2,
+                                        band3=band3,
+                                        previewurl=previewurl
+                                        )
                 DBSession.add(new)
                 transaction.commit()
         except:
@@ -82,14 +82,15 @@ class Rendered_Model(Base):
 
 
 class UserJob_Model(Base):
-    '''Model for the user job queue. Possible job statuses:
-        - 0 Created
-        - 1 Downloading
-        - 2 Processing
-        - 3 Compressing
-        - 4 Uploading to S3
-        - 5 Done (Success)
-        - 10 Done (Failed)
+    '''
+    Model for the user job queue. Possible job statuses:
+    status_key = {0: "In queue",
+                  1: "Downloading",
+                  2: "Processing",
+                  3: "Compressing",
+                  4: "Uploading to server",
+                  5: "Done",
+                  10: "Failed"}
     '''
 
     __tablename__ = 'user_job'
@@ -109,6 +110,7 @@ class UserJob_Model(Base):
     status4time = Column(DateTime)
     status5time = Column(DateTime)
     status10time = Column(DateTime)
+    rendertype = Column(UnicodeText)
 
     @classmethod
     def new_job(cls,
@@ -118,6 +120,7 @@ class UserJob_Model(Base):
                 band3=2,
                 jobstatus=0,
                 starttime=datetime.utcnow(),
+                rendertype=None
                 ):
         '''Create new job in db.'''
         try:
@@ -129,7 +132,8 @@ class UserJob_Model(Base):
                                 band3=band3,
                                 jobstatus=0,
                                 starttime=current_time,
-                                lastmodified=current_time
+                                lastmodified=current_time,
+                                rendertype=rendertype
                                 )
             session.add(job)
             session.flush()
@@ -140,7 +144,7 @@ class UserJob_Model(Base):
         except:
             return None
         try:
-            Rendered_Model.add(pk, True)
+            RenderCache_Model.add(pk, True)
         except:
             print 'Could not add job to rendered db'
         return pk
@@ -157,16 +161,16 @@ class UserJob_Model(Base):
         try:
             current_time = datetime.utcnow()
             DBSession.query(cls).filter(cls.jobid == int(jobid)).update(
-                                    {"jobstatus": status,
-                                     table_key[int(status)]: current_time,
-                                     "lastmodified": current_time
-                                     })
+                {"jobstatus": status,
+                table_key[int(status)]: current_time,
+                "lastmodified": current_time
+                })
             transaction.commit()
         except:
             print 'database write failed'
         # Tell render_cache db we have this image now
         if int(status) == 5:
             try:
-                Rendered_Model.update(jobid, False, url)
+                RenderCache_Model.update(jobid, False, url)
             except:
                 print 'Could not update Rendered db'

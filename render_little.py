@@ -12,7 +12,7 @@ from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
 from shutil import rmtree
 from datetime import datetime
 import subprocess
-from db_sql import Rendered_Model
+from models import RenderCache_Model, UserJob_Model
 
 
 os.getcwd()
@@ -189,12 +189,10 @@ def process(job):
         hello.set_canned_acl('public-read')
         out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
         print out
+        UserJob_Model.set_job_status(job['job_id'], 5, out)
     except:
         raise Exception('S3 Upload failed')
 
-    # store url in db
-    Rendered_Model.update_p_url(unicode(scene_id), job['band_1'],
-                                job['band_2'], job['band_3'], out)
 
     # delete files
     try:

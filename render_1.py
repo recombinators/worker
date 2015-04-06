@@ -10,7 +10,7 @@ from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
 from shutil import rmtree
 from datetime import datetime
-from db_sql import (Rendered_Model, UserJob_Model)
+from models import (RenderCache_Model, UserJob_Model)
 
 
 os.getcwd()
@@ -20,7 +20,7 @@ PATH_ACTIVITY_LOG = os.getcwd() + '/logs' + '/activity_log.txt'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
-JOBS_QUEUE = 'snapsat_render_queue'
+JOBS_QUEUE = 'snapsat_composite_queue'
 REGION = 'us-west-2'
 
 
@@ -89,7 +89,7 @@ def checking_for_jobs():
             except Exception as e:
                 write_activity('Delete success = {}'.format(del_status))
                 write_activity('Delete message fail because {}'
-                                .format(e.message))
+                               .format(e.message))
                 write_error('Delete message fail because {}'.format(e.message))
                 write_activity('Delete traceback: {}'.format(sys.exc_info()))
                 write_error('Delete traceback: {}'.format(sys.exc_info()))
@@ -153,24 +153,27 @@ def process(job):
         myzip.write(file_location)
 
     # upload to s3
-    print 'Uploading to S3'
-    UserJob_Model.set_job_status(job['job_id'], 4)
+    try:
+        print 'Uploading to S3'
+        UserJob_Model.set_job_status(job['job_id'], 4)
 
-    file_location = os.path.join(input_path, file_name_zip)
-    conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
-                            aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-    b = conne.get_bucket('snapsatcomposites')
-    k = Key(b)
-    k.key = file_name_zip
-    k.set_contents_from_filename(file_location)
-    k.get_contents_to_filename(file_location)
-    hello = b.get_key(file_name_zip)
-    # make public
-    hello.set_canned_acl('public-read')
+        file_location = os.path.join(input_path, file_name_zip)
+        conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        b = conne.get_bucket('snapsatcomposites')
+        k = Key(b)
+        k.key = file_name_zip
+        k.set_contents_from_filename(file_location)
+        k.get_contents_to_filename(file_location)
+        hello = b.get_key(file_name_zip)
+        # make public
+        hello.set_canned_acl('public-read')
 
-    out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
-    print out
-    UserJob_Model.set_job_status(job['job_id'], 5, out)
+        out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
+        print out
+        UserJob_Model.set_job_status(job['job_id'], 5, out)
+    except:
+        raise Exception('S3 Upload failed')
 
     # delete files
     try:
