@@ -176,9 +176,10 @@ def process(job):
     # upload to s3
     try:
         print 'Uploading to S3'
+        address = 'http://'
         conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
                                 aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-        b = conne.get_bucket('landsatproject')
+        b = conne.get_bucket('snapsatpreviews')
         k = Key(b)
         k.key = file_png
         k.set_contents_from_filename(file_location)

@@ -152,7 +152,7 @@ def process(job):
     file_location = os.path.join(input_path, file_name_zip)
     conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
                             aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-    b = conne.get_bucket('landsatproject')
+    b = conne.get_bucket('snapsatcomposites')
     k = Key(b)
     k.key = file_name_zip
     k.set_contents_from_filename(file_location)
