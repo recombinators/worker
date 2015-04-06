@@ -71,8 +71,7 @@ class Rendered_Model(Base):
                 entry.update({"previewurl": previewurl})
                 transaction.commit()
             else:
-                new = Rendered_Model(
-                                     entityid=scene,
+                new = Rendered_Model(entityid=scene,
                                      band1=band1,
                                      band2=band2,
                                      band3=band3,
