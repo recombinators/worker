@@ -10,7 +10,7 @@ from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
 from shutil import rmtree
 from datetime import datetime
-from db_sql import (Rendered_Model, UserJob_Model)
+from db_sql import (RenderCache_Model, UserJob_Model)
 
 
 os.getcwd()
