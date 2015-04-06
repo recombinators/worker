@@ -47,5 +47,6 @@ class TestProcess(fake_job1):
                         u'scene_id': u'LC80470272015005LGN00',
                         u'email': u'test@test.com'}
 
-    def test_download_returns_correct_values():
-        render_1.download_and_set(fake_job_message)
+    @mock.patch('Downloader')
+    def test_download_returns_correct_values(self):
+        render_1.download_and_set(self.fake_job_message, )
