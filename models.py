@@ -110,6 +110,7 @@ class UserJob_Model(Base):
     status4time = Column(DateTime)
     status5time = Column(DateTime)
     status10time = Column(DateTime)
+    rendertype = Column(UnicodeText)
 
     @classmethod
     def new_job(cls,
