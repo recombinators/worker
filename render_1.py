@@ -114,7 +114,7 @@ def checking_for_jobs():
                             .format(cleanup_status))
                 UserJob_Model.set_job_status(job_attributes['job_id'], 10)
 
-# begin process breakdown here:
+# begin process() breakdown here:
 
 
 def download_and_set(job, PATH_DOWNLOAD):
