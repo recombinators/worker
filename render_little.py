@@ -7,7 +7,6 @@ from image import Process
 import os
 import boto
 from boto.s3.key import Key
-import requests
 from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
 from shutil import rmtree
