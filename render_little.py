@@ -12,7 +12,7 @@ from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
 from shutil import rmtree
 from datetime import datetime
 import subprocess
-from db_sql import RenderCache_Model, UserJob_Model
+from models import RenderCache_Model, UserJob_Model
 
 
 os.getcwd()
