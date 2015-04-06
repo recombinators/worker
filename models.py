@@ -82,12 +82,15 @@ class RenderCache_Model(Base):
 
 
 class UserJob_Model(Base):
-    '''Model for the user job queue. Possible job statuses:
-    0 - Created
-    1 - Queued
-    2 - Processing
-    3 - Done (Failed)
-    4 - Done (Success)
+    '''
+    Model for the user job queue. Possible job statuses:
+    status_key = {0: "In queue",
+                  1: "Downloading",
+                  2: "Processing",
+                  3: "Compressing",
+                  4: "Uploading to server",
+                  5: "Done",
+                  10: "Failed"}
     '''
 
     __tablename__ = 'user_job'
@@ -116,6 +119,7 @@ class UserJob_Model(Base):
                 band3=2,
                 jobstatus=0,
                 starttime=datetime.utcnow(),
+                rendertype=None
                 ):
         '''Create new job in db.'''
         try:
@@ -127,7 +131,8 @@ class UserJob_Model(Base):
                                 band3=band3,
                                 jobstatus=0,
                                 starttime=current_time,
-                                lastmodified=current_time
+                                lastmodified=current_time,
+                                rendertype=rendertype
                                 )
             session.add(job)
             session.flush()
@@ -155,10 +160,10 @@ class UserJob_Model(Base):
         try:
             current_time = datetime.utcnow()
             DBSession.query(cls).filter(cls.jobid == int(jobid)).update(
-                                    {"jobstatus": status,
-                                     table_key[int(status)]: current_time,
-                                     "lastmodified": current_time
-                                     })
+                {"jobstatus": status,
+                table_key[int(status)]: current_time,
+                "lastmodified": current_time
+                })
             transaction.commit()
         except:
             print 'database write failed'
