@@ -56,9 +56,7 @@ class Rendered_Model(Base):
     def update_p_url(cls, scene, band1, band2, band3, previewurl):
         '''Method updates entry into db with preview url.'''
         # Convert parameters into correct type
-        band1 = int(band1)
-        band2 = int(band2)
-        band3 = int(band3)
+        band1, band2, band3 = int(band1), int(band2), int(band3)
         previewurl = u'{}'.format(previewurl)
         try:
             entry = DBSession.query(cls).filter(cls.entityid == scene,
