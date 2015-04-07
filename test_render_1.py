@@ -25,9 +25,10 @@ class JobFactory(factory.alchemy.SQLAlchemyModelFactory):
     lastmodified = datetime.utcnow()
     band1 = u'4'
     band2 = u'3'
-    band1 = u'2'
+    band3 = u'2'
     entityid = u'LC80470272015005LGN00'
     email = u'test@test.com'
+    jobid = factory.Sequence(lambda n: n)
 
 
 @pytest.fixture(scope='session')
@@ -106,8 +107,8 @@ class TestProcess(unittest.TestCase):
     def setUp(self):
         self.session = Session
 
-    @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
-    def test_download_returns_correct_values(self, fake_job_message):
+    @mock.patch('landsat.downloader.Downloader')
+    def test_download_returns_correct_values(self, Downloader):
         input_path, bands, scene_id = (render_1.download_and_set(
             self.fake_job_message, render_1.PATH_DOWNLOAD))
         self.assertEqual(input_path,
@@ -115,14 +116,22 @@ class TestProcess(unittest.TestCase):
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
-    @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
-    def test_download_updates_job_status(self, PATH_DOWNLOAD):
+    @mock.patch('landsat.downloader.Downloader')
+    def test_download_updates_job_status(self, Downloader):
         input_path, bands, scene_id = (render_1.download_and_set(
             self.fake_job_message, render_1.PATH_DOWNLOAD))
         job_f = JobFactory()
+        models.UserJob_Model.set_job_status(job_f.jobid, 1)
         self.assertEqual(
             [job_f], self.session.query(models.UserJob_Model).all()
         )
+        self.session.commit()
+
+        import pdb; pdb.set_trace()
+        
+            
+        
+        self.assertEqual(self.session.query.filter(models.UserJob_Model.jobid == 0))
 
     def tearDown(self):
         self.session.rollback()
