@@ -93,8 +93,8 @@ def test_db_is_rolled_back(db_session):
 
 # --- process tests
 
-#@pytest.mark.usefixtures("connection")
-#@pytest.mark.usefixtures("db_session")
+@pytest.mark.usefixtures("connection")
+@pytest.mark.usefixtures("db_session")
 class TestProcess(unittest.TestCase):
 
     fake_job_message = {u'job_id': u'1',
@@ -107,8 +107,8 @@ class TestProcess(unittest.TestCase):
     def setUp(self):
         self.session = Session
 
-    @mock.patch('landsat.downloader.Downloader')
-    def test_download_returns_correct_values(self, Downloader):
+    #@mock.patch('recombinators_landsat.landsat_worker.render_1.b')
+    def test_download_returns_correct_values(self):
         input_path, bands, scene_id = (render_1.download_and_set(
             self.fake_job_message, render_1.PATH_DOWNLOAD))
         self.assertEqual(input_path,
@@ -116,8 +116,8 @@ class TestProcess(unittest.TestCase):
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
-    @mock.patch('landsat.downloader.Downloader')
-    def test_download_updates_job_status(self, Downloader):
+    #@mock.patch('recombinators_landsat.landsat_worker.render_1.b')
+    def test_download_updates_job_status(self):
         input_path, bands, scene_id = (render_1.download_and_set(
             self.fake_job_message, render_1.PATH_DOWNLOAD))
         job_f = JobFactory()
@@ -126,12 +126,6 @@ class TestProcess(unittest.TestCase):
             [job_f], self.session.query(models.UserJob_Model).all()
         )
         self.session.commit()
-
-        import pdb; pdb.set_trace()
-        
-            
-        
-        self.assertEqual(self.session.query.filter(models.UserJob_Model.jobid == 0))
 
     def tearDown(self):
         self.session.rollback()
