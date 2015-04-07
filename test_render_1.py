@@ -10,6 +10,8 @@ import unittest
 import os
 import factory
 import factory.alchemy
+from models import (RenderCache_Model, UserJob_Model)
+
 
 Session = orm.scoped_session(orm.sessionmaker())
 
@@ -28,7 +30,7 @@ class JobFactory(factory.alchemy.SQLAlchemyModelFactory):
     band3 = u'2'
     entityid = u'LC80470272015005LGN00'
     email = u'test@test.com'
-    jobid = factory.Sequence(lambda n: n)
+    #jobid = factory.Sequence(lambda n: n)
 
 
 @pytest.fixture(scope='session')
@@ -64,16 +66,6 @@ def fake_job1(db_session):
     db_session.add(model_instance)
     db_session.flush()
 
-
-#@pytest.mark.usefixtures("db_session")
-#class BaseTest(object):
-#    def setup_method(self, method):
-#        self.config = testing.setUp()
-#
-#    def teardown_method(self, method):
-#        transaction.abort()
-#        testing.tearDown
-#
 # --- test db functionality tests
 
 
@@ -107,8 +99,8 @@ class TestProcess(unittest.TestCase):
     def setUp(self):
         self.session = Session
 
-    #@mock.patch('recombinators_landsat.landsat_worker.render_1.b')
-    def test_download_returns_correct_values(self):
+    @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
+    def test_download_returns_correct_values(self, Downloader):
         input_path, bands, scene_id = (render_1.download_and_set(
             self.fake_job_message, render_1.PATH_DOWNLOAD))
         self.assertEqual(input_path,
@@ -116,11 +108,16 @@ class TestProcess(unittest.TestCase):
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
-    #@mock.patch('recombinators_landsat.landsat_worker.render_1.b')
-    def test_download_updates_job_status(self):
+    @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
+    def test_download_updates_job_status(self, Downloader):
         input_path, bands, scene_id = (render_1.download_and_set(
             self.fake_job_message, render_1.PATH_DOWNLOAD))
         job_f = JobFactory()
+        
+        import pdb; pdb.set_trace()
+        
+            
+        
         models.UserJob_Model.set_job_status(job_f.jobid, 1)
         self.assertEqual(
             [job_f], self.session.query(models.UserJob_Model).all()
