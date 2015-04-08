@@ -53,16 +53,16 @@ class JobFactory(factory.alchemy.SQLAlchemyModelFactory):
     email = u'test@test.com'
     jobid = factory.Sequence(lambda n: n)
 
-#
-#@pytest.fixture(scope='class')
-#def fake_job1(db_session):
-#    model_instance = models.UserJob_Model(
-#        jobstatus=0,
-#        starttime=datetime.utcnow(),
-#        lastmodified=datetime.utcnow()
-#    )
-#    db_session.add(model_instance)
-#    db_session.flush()
+
+@pytest.fixture(scope='class')
+def fake_job1(db_session):
+    model_instance = models.UserJob_Model(
+        jobstatus=0,
+        starttime=datetime.utcnow(),
+        lastmodified=datetime.utcnow()
+    )
+    db_session.add(model_instance)
+    db_session.flush()
 
 # --- test db functionality tests
 
@@ -83,8 +83,7 @@ def test_db_is_rolled_back(db_session):
 
 # --- process tests
 
-@pytest.mark.usefixtures("connection")
-@pytest.mark.usefixtures("db_session")
+@pytest.mark.usefixtures("connection", "db_session", "fake_job1")
 class TestProcess(unittest.TestCase):
 
     fake_job_message = {u'job_id': u'1',
@@ -94,6 +93,10 @@ class TestProcess(unittest.TestCase):
                         u'scene_id': u'LC80470272015005LGN00',
                         u'email': u'test@test.com'}
 
+    test_input_path = os.getcwd() + '/download/LC80470272015005LGN00'
+    test_bands = [u'4', u'3', u'2']
+    test_scene_id = 'LC80470272015005LGN00'
+
     @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
     def test_download_returns_correct_values(self, Downloader):
         input_path, bands, scene_id = (render_1.download_and_set(
@@ -102,4 +105,18 @@ class TestProcess(unittest.TestCase):
                          os.getcwd() + '/download/LC80470272015005LGN00')
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
+
+    @mock.patch('recombinators_landsat.landsat_worker.render_1.Process')
+    def test_process_image(self, Process):
+        band_output, file_location = (render_1.process_image(
+            self.fake_job_message,
+            self.test_input_path,
+            self.test_bands,
+            render_1.PATH_DOWNLOAD,
+            self.test_scene_id)
+        )
+        self.assertEqual(band_output, '432')
+        self.assertEqual(
+            file_location, os.getcwd() +
+            '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.TIF')
 

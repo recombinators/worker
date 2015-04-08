@@ -128,11 +128,7 @@ def download_and_set(job, PATH_DOWNLOAD):
     return input_path, bands, scene_id
 
 
-def process(job):
-    '''Given bands and sceneID, download, image process, zip & upload to S3.'''
-    # download and set vars
-    input_path, bands, scene_id = download_and_set(job, PATH_DOWNLOAD)
-
+def process_image(job, input_path, bands, PATH_DOWNLOAD, scene_id):
     UserJob_Model.set_job_status(job['job_id'], 2)
     c = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD, verbose=True)
     c.run(pansharpen=False)
@@ -143,6 +139,19 @@ def process(job):
         band_output = '{}{}'.format(band_output, band)
     file_name = '{}_bands_{}.TIF'.format(scene_id, band_output)
     file_location = os.path.join(input_path, file_name)
+    return band_output, file_location
+
+
+def process(job):
+    '''Given bands and sceneID, download, image process, zip & upload to S3.'''
+    # download and set vars
+    input_path, bands, scene_id = download_and_set(job, PATH_DOWNLOAD)
+
+    # process image
+    band_output, file_location = process_image(
+        job, input_path, bands, PATH_DOWNLOAD, scene_id
+    )
+
 
     # zip file, maintain location
     print 'Zipping file'
