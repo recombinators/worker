@@ -145,3 +145,13 @@ class TestProcess(unittest.TestCase):
             file_location, os.getcwd() +
             '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.zip')
 
+    @mock.patch('recombinators_landsat.landsat_worker.render_1.Key')
+    @mock.patch('recombinators_landsat.landsat_worker.render_1.boto')
+    def test_upload_to_s3_fails_with_exception(self, boto, Key):
+        # missing job argument to cause exception
+        with self.assertRaises(Exception):
+            render_1.upload_to_s3(self.test_file_location,
+                                  self.test_file_name_zip,
+                                  self.test_input_path,
+                                  None
+                                  )
