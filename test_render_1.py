@@ -13,7 +13,7 @@ import factory.alchemy
 from models import (RenderCache_Model, UserJob_Model)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='session', autouse=True)
 def connection(request):
     engine = create_engine('postgresql://postgres@/test_bar')
     models.Base.metadata.create_all(engine)
@@ -25,7 +25,7 @@ def connection(request):
     return connection
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def db_session(request, connection):
     from transaction import abort
     trans = connection.begin()
@@ -94,9 +94,6 @@ class TestProcess(unittest.TestCase):
                         u'scene_id': u'LC80470272015005LGN00',
                         u'email': u'test@test.com'}
 
-    def setUp(self):
-        self.session = db_session
-
     @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
     def test_download_returns_correct_values(self, Downloader):
         input_path, bands, scene_id = (render_1.download_and_set(
@@ -106,17 +103,3 @@ class TestProcess(unittest.TestCase):
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
-    @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
-    def test_download_updates_job_status(self, Downloader):
-        input_path, bands, scene_id = (render_1.download_and_set(
-            self.fake_job_message, render_1.PATH_DOWNLOAD))
-        job_f = JobFactory()
-        models.UserJob_Model.set_job_status(job_f.jobid, 1)
-        self.assertEqual(
-            [job_f], self.session.query(models.UserJob_Model).all()
-        )
-        self.session.commit()
-
-    #def tearDown(self):
-    #    self.session.rollback()
-    #    self.session.remove()
