@@ -142,6 +142,16 @@ def process_image(job, input_path, bands, PATH_DOWNLOAD, scene_id):
     return band_output, file_location
 
 
+def zip_file(job, band_output, scene_id, input_path, file_location):
+    print 'Zipping file'
+    UserJob_Model.set_job_status(job['job_id'], 3)
+    file_name_zip = '{}_bands_{}.zip'.format(scene_id, band_output)
+    path_to_zip = os.path.join(input_path, file_name_zip)
+    with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
+        myzip.write(file_location)
+    return file_name_zip
+
+
 def process(job):
     '''Given bands and sceneID, download, image process, zip & upload to S3.'''
     # download and set vars
@@ -152,14 +162,9 @@ def process(job):
         job, input_path, bands, PATH_DOWNLOAD, scene_id
     )
 
-
     # zip file, maintain location
-    print 'Zipping file'
-    UserJob_Model.set_job_status(job['job_id'], 3)
-    file_name_zip = '{}_bands_{}.zip'.format(scene_id, band_output)
-    path_to_zip = os.path.join(input_path, file_name_zip)
-    with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
-        myzip.write(file_location)
+    file_name_zip = zip_file(job, band_output, scene_id, input_path,
+                             file_location)
 
     # upload to s3
     try:
