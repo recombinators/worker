@@ -25,8 +25,8 @@ REGION = 'us-west-2'
 
 
 def cleanup_downloads(folder_path):
-    '''Clean up download folder if process fails. Return True if download folder
-       empty'''
+    """Clean up download folder if process fails. Return True if download folder
+       empty"""
     for file_object in os.listdir(folder_path):
         file_object_path = os.path.join(folder_path, file_object)
         if os.path.isfile(file_object_path):
@@ -54,12 +54,12 @@ def write_error(message):
 
 
 def main():
-    '''Main.'''
+    """Main."""
     checking_for_jobs()
 
 
 def checking_for_jobs():
-    '''Poll jobs queue for jobs.'''
+    """Poll jobs queue for jobs."""
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
                                   AWS_SECRET_ACCESS_KEY)
     write_activity(SQSconn)
@@ -153,7 +153,7 @@ def zip_file(job, band_output, scene_id, input_path, file_location):
 
 
 def process(job):
-    '''Given bands and sceneID, download, image process, zip & upload to S3.'''
+    """Given bands and sceneID, download, image process, zip & upload to S3."""
     # download and set vars
     input_path, bands, scene_id = download_and_set(job, PATH_DOWNLOAD)
 
