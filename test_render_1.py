@@ -13,26 +13,6 @@ import factory.alchemy
 from models import (RenderCache_Model, UserJob_Model)
 
 
-Session = orm.scoped_session(orm.sessionmaker())
-
-
-class JobFactory(factory.alchemy.SQLAlchemyModelFactory):
-    class Meta:
-        model = models.UserJob_Model
-
-        sqlalchemy_session = Session
-
-    jobstatus = 0
-    starttime = datetime.utcnow()
-    lastmodified = datetime.utcnow()
-    band1 = u'4'
-    band2 = u'3'
-    band3 = u'2'
-    entityid = u'LC80470272015005LGN00'
-    email = u'test@test.com'
-    #jobid = factory.Sequence(lambda n: n)
-
-
 @pytest.fixture(scope='session')
 def connection(request):
     engine = create_engine('postgresql://postgres@/test_bar')
@@ -56,15 +36,33 @@ def db_session(request, connection):
     return DBSession
 
 
-@pytest.fixture(scope='class')
-def fake_job1(db_session):
-    model_instance = models.UserJob_Model(
-        jobstatus=0,
-        starttime=datetime.utcnow(),
-        lastmodified=datetime.utcnow()
-    )
-    db_session.add(model_instance)
-    db_session.flush()
+@pytest.mark.usefixtures("connection", "db_session")
+class JobFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta():
+        model = models.UserJob_Model
+
+        sqlalchemy_session = db_session
+
+    jobstatus = 0
+    starttime = datetime.utcnow()
+    lastmodified = datetime.utcnow()
+    band1 = u'4'
+    band2 = u'3'
+    band3 = u'2'
+    entityid = u'LC80470272015005LGN00'
+    email = u'test@test.com'
+    jobid = factory.Sequence(lambda n: n)
+
+#
+#@pytest.fixture(scope='class')
+#def fake_job1(db_session):
+#    model_instance = models.UserJob_Model(
+#        jobstatus=0,
+#        starttime=datetime.utcnow(),
+#        lastmodified=datetime.utcnow()
+#    )
+#    db_session.add(model_instance)
+#    db_session.flush()
 
 # --- test db functionality tests
 
@@ -97,7 +95,7 @@ class TestProcess(unittest.TestCase):
                         u'email': u'test@test.com'}
 
     def setUp(self):
-        self.session = Session
+        self.session = db_session
 
     @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
     def test_download_returns_correct_values(self, Downloader):
@@ -113,17 +111,12 @@ class TestProcess(unittest.TestCase):
         input_path, bands, scene_id = (render_1.download_and_set(
             self.fake_job_message, render_1.PATH_DOWNLOAD))
         job_f = JobFactory()
-        
-        import pdb; pdb.set_trace()
-        
-            
-        
         models.UserJob_Model.set_job_status(job_f.jobid, 1)
         self.assertEqual(
             [job_f], self.session.query(models.UserJob_Model).all()
         )
         self.session.commit()
 
-    def tearDown(self):
-        self.session.rollback()
-        Session.remove()
+    #def tearDown(self):
+    #    self.session.rollback()
+    #    self.session.remove()
