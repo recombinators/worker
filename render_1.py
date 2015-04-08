@@ -152,6 +152,29 @@ def zip_file(job, band_output, scene_id, input_path, file_location):
     return file_name_zip
 
 
+def upload_to_s3(file_location, file_name_zip, input_path, job):
+    try:
+        print 'Uploading to S3'
+        UserJob_Model.set_job_status(job['job_id'], 4)
+        file_location = os.path.join(input_path, file_name_zip)
+        conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        b = conne.get_bucket('snapsatcomposites')
+        k = Key(b)
+        k.key = file_name_zip
+        k.set_contents_from_filename(file_location)
+        k.get_contents_to_filename(file_location)
+        hello = b.get_key(file_name_zip)
+        # make public
+        hello.set_canned_acl('public-read')
+        out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
+        print out
+        UserJob_Model.set_job_status(job['job_id'], 5, out)
+    except:
+        raise Exception('S3 Upload failed')
+    return file_location
+
+
 def process(job):
     """Given bands and sceneID, download, image process, zip & upload to S3."""
     # download and set vars
@@ -167,27 +190,7 @@ def process(job):
                              file_location)
 
     # upload to s3
-    try:
-        print 'Uploading to S3'
-        UserJob_Model.set_job_status(job['job_id'], 4)
-
-        file_location = os.path.join(input_path, file_name_zip)
-        conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-        b = conne.get_bucket('snapsatcomposites')
-        k = Key(b)
-        k.key = file_name_zip
-        k.set_contents_from_filename(file_location)
-        k.get_contents_to_filename(file_location)
-        hello = b.get_key(file_name_zip)
-        # make public
-        hello.set_canned_acl('public-read')
-
-        out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
-        print out
-        UserJob_Model.set_job_status(job['job_id'], 5, out)
-    except:
-        raise Exception('S3 Upload failed')
+    file_location = upload_to_s3(file_location, file_name_zip, input_path, job)
 
     # delete files
     try:

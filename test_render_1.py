@@ -99,6 +99,7 @@ class TestProcess(unittest.TestCase):
     test_band_output = '432'
     test_file_location = (os.getcwd() +
         '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.TIF')
+    test_file_name_zip = 'LC80470272015005LGN00_bands_432.zip'
 
     @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
     def test_download_returns_correct_values(self, Downloader):
@@ -131,3 +132,16 @@ class TestProcess(unittest.TestCase):
                                           self.test_input_path,
                                           self.test_file_location)
         self.assertEqual(file_name_zip, "LC80470272015005LGN00_bands_432.zip")
+
+    @mock.patch('recombinators_landsat.landsat_worker.render_1.Key')
+    @mock.patch('recombinators_landsat.landsat_worker.render_1.boto')
+    def test_upload_to_s3(self, boto, Key):
+        file_location = render_1.upload_to_s3(self.test_file_location,
+                                              self.test_file_name_zip,
+                                              self.test_input_path,
+                                              self.fake_job_message
+                                              )
+        self.assertEqual(
+            file_location, os.getcwd() +
+            '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.zip')
+
