@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/recombinators/landsat_worker.svg)](https://travis-ci.org/recombinators/landsat_worker)
 
-# landsat_worker
+# landsat_worker - builds composite images
 To install on worker:
 spool up t2.medium instance
 
