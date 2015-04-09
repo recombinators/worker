@@ -25,9 +25,9 @@ python-dateutil==2.2
 pytz==2015.2
 rasterio==0.18
 requests==2.5.3
+six==1.9.0
 scikit-image==0.10.1
 scipy==0.15.1
-six==1.9.0
 SQLAlchemy==0.9.9
 termcolor==1.1.0
 transaction==1.4.3
