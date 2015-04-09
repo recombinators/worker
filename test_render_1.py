@@ -158,7 +158,7 @@ class TestProcess(unittest.TestCase):
 
 
 def test_cleanup_downloads():
-    test_dir = os.getcwd() + '/test'
+    test_dir = os.getcwd() + '/testdir'
 
     if not os.path.exists(test_dir):
         os.makedirs(test_dir)
