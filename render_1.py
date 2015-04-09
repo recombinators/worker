@@ -146,9 +146,10 @@ def zip_file(job, band_output, scene_id, input_path, file_location):
     print 'Zipping file'
     UserJob_Model.set_job_status(job['job_id'], 3)
     file_name_zip = '{}_bands_{}.zip'.format(scene_id, band_output)
+    file_name = '{}_bands_{}.TIF'.format(scene_id, band_output)
     path_to_zip = os.path.join(input_path, file_name_zip)
     with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
-        myzip.write(file_location)
+        myzip.write(file_location, arcname=file_name)
     return file_name_zip
 
 
