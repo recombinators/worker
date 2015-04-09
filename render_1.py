@@ -143,7 +143,7 @@ def process(job):
     file_name_zip = '{}_bands_{}.zip'.format(scene_id, band_output)
     path_to_zip = os.path.join(input_path, file_name_zip)
     with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
-        myzip.write(file_location)
+        myzip.write(file_location, arcname=file_name)
 
     # upload to s3
     try:
