@@ -155,3 +155,17 @@ class TestProcess(unittest.TestCase):
                                   self.test_input_path,
                                   None
                                   )
+
+
+def test_cleanup_downloads():
+    test_dir = os.getcwd() + '/test'
+
+    if not os.path.exists(test_dir):
+        os.makedirs(test_dir)
+
+    f = open(test_dir + '/test.txt', 'a')
+    f.write('this is a test')
+    f.close()
+
+    assert render_1.cleanup_downloads(test_dir) == True
+
