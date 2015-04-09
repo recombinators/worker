@@ -9,13 +9,14 @@ before_install:
     - "export PATH=/home/travis/miniconda/bin:$PATH"
     - "conda update --yes conda"
     - "pip install six>=1.3"
+    - "pip install gdal gdal-data"
 
   # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
     - "sudo rm -rf /dev/shm"
     - "sudo ln -s /run/shm /dev/shm"
 
 install: 
-    - "conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy rasterio"
+    - "conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy"
     - "pip install -r requirements.txt"
   # Coverage packages are on my binstar channel
 
