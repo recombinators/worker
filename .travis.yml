@@ -1,7 +1,10 @@
 language: python
 python:
     - "2.7"
-    
+
+virtualenv:
+  system_site_packages: true
+
 before_install:
     - "wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh"
     - "chmod +x miniconda.sh"
@@ -18,10 +21,7 @@ before_install:
 
 install: 
     - "conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy"
-    - pip install --install-option="--no-cython-compile" cython
     - "pip install -r requirements.txt"
-  # "pip install python-dateutil --force-reinstall --upgrade"
-  # Coverage packages are on my binstar channel
 
 script:
     - "py.test -s -v test_render_1.py"
