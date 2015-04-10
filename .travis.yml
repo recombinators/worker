@@ -5,6 +5,9 @@ python:
 virtualenv:
   system_site_packages: true
 
+notifications:
+  slack: snapsat:577gUu73YU9W4fOOkLKN5zZw
+
 before_install:
     - "sudo apt-get update -qq"
     - "wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh"
@@ -17,7 +20,6 @@ before_install:
     - "sudo apt-get install -y libgdal1h gdal-bin libgdal-dev"
     - "sudo pip install homura"
     - "sudo apt-get install python-dateutil"
-    - "sudo pip install termcolor"
 
   # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
     - "sudo rm -rf /dev/shm"
@@ -27,6 +29,8 @@ install:
     - "conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy"
     - "pip install -r requirements.txt"
     - "export PATH=$PATH:$PWD/landsat-util/landsat/"
+    - "pip install termcolor"
+
 
 script:
     - "py.test -s -v test_render_1.py"
