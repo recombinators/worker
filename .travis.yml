@@ -6,6 +6,7 @@ virtualenv:
   system_site_packages: true
 
 before_install:
+    - sudo "apt-get update -qq"
     - "wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh"
     - "chmod +x miniconda.sh"
     - "./miniconda.sh -b"
@@ -25,6 +26,7 @@ before_install:
 install: 
     - "conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy"
     - "pip install -r requirements.txt"
+    - "export PATH=$PATH:$PWD/landsat-util/landsat/"
 
 script:
     - "py.test -s -v test_render_1.py"
