@@ -1,36 +1,28 @@
 language: python
 python:
-    - "2.7"
-
+- '2.7'
 virtualenv:
   system_site_packages: true
-
 notifications:
-  slack: snapsat:577gUu73YU9W4fOOkLKN5zZw
-
+  slack:
+    secure: iqdNG6wdkp86zQ2dSY3OMW3VwvPlBwtcbeaZmcy12XXqxxYgfATHEK9sEW20zxU4iZCSoprycN8qFjtna7yjnCUkx6Vd1kGw9N8PvEfpuwwGhORcF1VE5YKC34fP+F7AUuNXMkPNe/R2RAtN2qtM6q1dnuYTQZIR8G+xd37qOP8=
 before_install:
-    - "sudo apt-get update -qq"
-    - "wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh"
-    - "chmod +x miniconda.sh"
-    - "./miniconda.sh -b"
-    - "export PATH=/home/travis/miniconda/bin:$PATH"
-    - "conda update --yes conda"
-    - "pip install six>=1.3"
-    - "sudo apt-get install libcurl4-openssl-dev python-dev"
-    - "sudo apt-get install -y libgdal1h gdal-bin libgdal-dev"
-    - "sudo pip install homura"
-    - "sudo apt-get install python-dateutil"
-
-  # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
-    - "sudo rm -rf /dev/shm"
-    - "sudo ln -s /run/shm /dev/shm"
-
-install: 
-    - "conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy"
-    - "pip install -r requirements.txt"
-    - "export PATH=$PATH:$PWD/landsat-util/landsat/"
-    - "pip install termcolor"
-
-
+- sudo apt-get update -qq
+- wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+- chmod +x miniconda.sh
+- "./miniconda.sh -b"
+- export PATH=/home/travis/miniconda/bin:$PATH
+- conda update --yes conda
+- pip install six>=1.3
+- sudo apt-get install libcurl4-openssl-dev python-dev
+- sudo apt-get install -y libgdal1h gdal-bin libgdal-dev
+- sudo pip install homura
+- sudo apt-get install python-dateutil
+- sudo rm -rf /dev/shm
+- sudo ln -s /run/shm /dev/shm
+install:
+- conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy
+- export PATH=$PATH:$PWD/landsat-util/landsat/
+- pip install -r requirements.txt
 script:
-    - "py.test -s -v test_render_1.py"
+- py.test -s -v test_render_1.py
