@@ -17,7 +17,7 @@ before_install:
 
 install: 
     - "conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy dateutil"
-    - "pip install --install-option="--no-cython-compile" cython"
+    - pip install --install-option="--no-cython-compile" cython
     - "pip install -r requirements.txt"
   # "pip install python-dateutil --force-reinstall --upgrade"
   # Coverage packages are on my binstar channel
