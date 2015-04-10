@@ -15,6 +15,7 @@ before_install:
     - "sudo apt-get install libcurl4-openssl-dev python-dev"
     - "sudo apt-get install -y libgdal1h gdal-bin libgdal-dev"
     - "sudo pip install homura"
+    - "sudo pip install termcolor"
     - "sudo apt-get install python-dateutil"
 
   # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
