@@ -16,9 +16,9 @@ before_install:
     - "sudo ln -s /run/shm /dev/shm"
 
 install: 
-    - "conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy"
-    - "pip install python-dateutil --force-reinstall --upgrade"
+    - "conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy dateutil"
     - "pip install -r requirements.txt"
+  # "pip install python-dateutil --force-reinstall --upgrade"
   # Coverage packages are on my binstar channel
 
 script:
