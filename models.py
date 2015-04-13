@@ -111,6 +111,7 @@ class UserJob_Model(Base):
     status5time = Column(DateTime)
     status10time = Column(DateTime)
     rendertype = Column(UnicodeText)
+    workerinstanceid = Column(UnicodeText)
 
     @classmethod
     def new_job(cls,
@@ -162,6 +163,30 @@ class UserJob_Model(Base):
             current_time = datetime.utcnow()
             DBSession.query(cls).filter(cls.jobid == int(jobid)).update(
                 {"jobstatus": status,
+                table_key[int(status)]: current_time,
+                "lastmodified": current_time
+                })
+            transaction.commit()
+        except:
+            print 'database write failed'
+        # Tell render_cache db we have this image now
+        if int(status) == 5:
+            try:
+                RenderCache_Model.update(jobid, False, url)
+            except:
+                print 'Could not update Rendered db'
+
+    @classmethod
+    def set_worker_instance_id(cls, jobid, worker_instance_id):
+        """
+        Set worker instance id for requested job to track which worker is doing
+        the job.
+        """
+
+        try:
+            current_time = datetime.utcnow()
+            DBSession.query(cls).filter(cls.jobid == int(jobid)).update(
+                {"workerinstanceid": worker_instance_id,
                 table_key[int(status)]: current_time,
                 "lastmodified": current_time
                 })

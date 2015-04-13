@@ -181,7 +181,12 @@ def upload_to_s3(file_location, file_name_zip, input_path, job):
 
 
 def process(job):
-    """Given bands and sceneID, download, image process, zip & upload to S3."""
+    """
+    Given bands and sceneID, download, image process, zip & upload to S3.
+    """
+    # set worker instance id for job
+    UserJob_Model.set_job_status(job['job_id'], INSTANCE_ID)
+
     # download and set vars
     input_path, bands, scene_id = download_and_set(job, PATH_DOWNLOAD)
 
