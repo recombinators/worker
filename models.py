@@ -184,18 +184,8 @@ class UserJob_Model(Base):
         """
 
         try:
-            current_time = datetime.utcnow()
             DBSession.query(cls).filter(cls.jobid == int(jobid)).update(
-                {"workerinstanceid": worker_instance_id,
-                table_key[int(status)]: current_time,
-                "lastmodified": current_time
-                })
+                {"workerinstanceid": worker_instance_id})
             transaction.commit()
         except:
             print 'database write failed'
-        # Tell render_cache db we have this image now
-        if int(status) == 5:
-            try:
-                RenderCache_Model.update(jobid, False, url)
-            except:
-                print 'Could not update Rendered db'
