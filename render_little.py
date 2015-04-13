@@ -13,6 +13,7 @@ from shutil import rmtree
 from datetime import datetime
 import subprocess
 from models import RenderCache_Model, UserJob_Model
+from boto import utils
 
 
 os.getcwd()
@@ -24,6 +25,9 @@ AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
 JOBS_QUEUE = 'snapsat_preview_queue'
 REGION = 'us-west-2'
+
+INSTANCE_METADATA = utils.get_instance_metadata(timeout=0.5, num_retries=1)
+INSTANCE_ID = INSTANCE_METADATA['instance-id']
 
 
 def cleanup_downloads(folder_path):
