@@ -1,10 +1,10 @@
+import os
+import transaction
 from zope.sqlalchemy import ZopeTransactionExtension
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, UnicodeText, Boolean, DateTime
-import transaction
-import os
 from datetime import datetime
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
@@ -16,7 +16,9 @@ Base.metadata.bind = engine
 
 
 class RenderCache_Model(Base):
-    '''Model for the already rendered files'''
+    """
+    Model for the already rendered files.
+    """
     __tablename__ = 'render_cache'
     id = Column(Integer, primary_key=True)
     jobid = Column(Integer)
@@ -31,7 +33,9 @@ class RenderCache_Model(Base):
 
     @classmethod
     def add(cls, jobid, currentlyrend):
-        '''Method adds entry into db given jobid and optional url.'''
+        """
+        Method adds entry into db given jobid and optional url.
+        """
         jobQuery = DBSession.query(UserJob_Model).get(jobid)
         job = RenderCache_Model(entityid=jobQuery.entityid,
                                 jobid=jobid,
@@ -44,17 +48,21 @@ class RenderCache_Model(Base):
 
     @classmethod
     def update(cls, jobid, currentlyrend, renderurl):
-        '''Method updates entry into db given jobid and optional url.'''
+        """
+        Method updates entry into db given jobid and optional url.
+        """
         try:
             DBSession.query(cls).filter(cls.jobid == jobid).update({
                 "currentlyrend": currentlyrend, "renderurl": renderurl})
             transaction.commit()
         except:
-            print 'could not update db'
+            print 'Could not update database.'
 
     @classmethod
     def update_p_url(cls, scene, band1, band2, band3, previewurl):
-        '''Method updates entry into db with preview url.'''
+        """
+        Method updates entry into db with preview url.
+        """
         # Convert parameters into correct type
         band1, band2, band3 = int(band1), int(band2), int(band3)
         previewurl = u'{}'.format(previewurl)
@@ -78,21 +86,21 @@ class RenderCache_Model(Base):
                 DBSession.add(new)
                 transaction.commit()
         except:
-            print 'could not add preview url to db'
+            print 'Could not add the preview URL to the database.'
 
 
 class UserJob_Model(Base):
-    '''
+    """
     Model for the user job queue. Possible job statuses:
-    status_key = {0: "In queue",
-                  1: "Downloading",
-                  2: "Processing",
-                  3: "Compressing",
-                  4: "Uploading to server",
-                  5: "Done",
-                  10: "Failed"}
-    '''
-
+    status_key = {
+        0: "In queue",
+        1: "Downloading",
+        2: "Processing",
+        3: "Compressing",
+        4: "Uploading to server",
+        5: "Done",
+        10: "Failed"}
+    """
     __tablename__ = 'user_job'
     jobid = Column(Integer, primary_key=True)
     entityid = Column(UnicodeText)
@@ -122,7 +130,9 @@ class UserJob_Model(Base):
                 starttime=datetime.utcnow(),
                 rendertype=None
                 ):
-        '''Create new job in db.'''
+        """
+        Create a new job in the database.
+        """
         try:
             session = DBSession
             current_time = datetime.utcnow()
@@ -140,7 +150,7 @@ class UserJob_Model(Base):
             session.refresh(job)
             pk = job.jobid
             transaction.commit()
-            transaction.begin() # could do this or a subtransacation, ie open a transaction at the beginning of this method.
+            transaction.begin()
         except:
             return None
         try:
@@ -151,7 +161,9 @@ class UserJob_Model(Base):
 
     @classmethod
     def set_job_status(cls, jobid, status, url=None):
-        '''Set jobstatus for jobid passed in.'''
+        """
+        Set jobstatus for jobid passed in.
+        """
         table_key = {1: "status1time",
                      2: "status2time",
                      3: "status3time",
@@ -160,17 +172,17 @@ class UserJob_Model(Base):
                      10: "status10time"}
         try:
             current_time = datetime.utcnow()
-            DBSession.query(cls).filter(cls.jobid == int(jobid)).update(
-                {"jobstatus": status,
+            DBSession.query(cls).filter(cls.jobid == int(jobid)).update({
+                "jobstatus": status,
                 table_key[int(status)]: current_time,
                 "lastmodified": current_time
                 })
             transaction.commit()
         except:
-            print 'database write failed'
+            print 'Database write failed.'
         # Tell render_cache db we have this image now
         if int(status) == 5:
             try:
                 RenderCache_Model.update(jobid, False, url)
             except:
-                print 'Could not update Rendered db'
+                print 'Could not update the Rendered database.'
