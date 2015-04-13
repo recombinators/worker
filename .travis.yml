@@ -29,7 +29,7 @@ install:
   - export PATH=$PATH:$PWD/landsat-util/landsat/
   - pwd
   - ls -la
-  - cd landsat_util
+  - cd landsat-util
   - pip install -e .
   - cd ..
   - pip install -r requirements.txt
