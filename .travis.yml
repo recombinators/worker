@@ -27,9 +27,7 @@ install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib gdal scikit-image requests six nose dateutil
   - pip install --install-option="--no-cython-compile" cython
   - export PATH=$PATH:$PWD/landsat-util/landsat/
-  - pip install -r https://raw.githubusercontent.com/mapbox/rasterio/master/requirements.txt
-  - pip install "git+https://github.com/mapbox/rasterio.git@0.13.1#egg=rasterio"
+  - pip install -e landsat_util/
   - pip install -r requirements.txt
 script:
-  - pwd  
   - py.test -s -v test_render_1.py
