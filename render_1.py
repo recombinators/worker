@@ -12,7 +12,7 @@ from shutil import rmtree
 from datetime import datetime
 from models import (UserJob_Model)
 from boto import utils
-
+import socket
 
 os.getcwd()
 PATH_DOWNLOAD = os.getcwd() + '/download'
@@ -24,8 +24,11 @@ AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
 JOBS_QUEUE = 'snapsat_composite_queue'
 REGION = 'us-west-2'
 
-INSTANCE_METADATA = utils.get_instance_metadata(timeout=0.5, num_retries=1)
-INSTANCE_ID = INSTANCE_METADATA['instance-id']
+try:
+    INSTANCE_METADATA = utils.get_instance_metadata(timeout=0.5, num_retries=1)
+    INSTANCE_ID = INSTANCE_METADATA['instance-id']
+except:
+    INSTANCE_ID = socket.gethostname()
 
 
 def cleanup_downloads(folder_path):
