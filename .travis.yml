@@ -31,4 +31,5 @@ install:
   - pip install "git+https://github.com/mapbox/rasterio.git@0.13.1#egg=rasterio"
   - pip install -r requirements.txt
 script:
+  - pwd  
   - py.test -s -v test_render_1.py

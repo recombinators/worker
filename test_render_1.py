@@ -3,14 +3,13 @@ sys.path.append('../landsat-util/landsat')
 import pytest
 import render_1
 import models
-from sqlalchemy import create_engine, orm
+from sqlalchemy import create_engine
 from datetime import datetime
 import mock
 import unittest
 import os
 import factory
 import factory.alchemy
-from models import (RenderCache_Model, UserJob_Model)
 
 
 @pytest.fixture(scope='session', autouse=True)
