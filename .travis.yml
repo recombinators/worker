@@ -12,6 +12,8 @@ before_install:
   - chmod +x miniconda.sh
   - "./miniconda.sh -b"
   - export PATH=/home/travis/miniconda/bin:$PATH
+  - export PATH=/home/travis/miniconda/lib/python2.7/site-packages:$PATH
+  - export PATH=/home/travis/virtualenv/python2.7_with_system_site_packages/bin/python2.7
   - conda update --yes conda
   - pip install six>=1.3
   - sudo apt-get install libcurl4-openssl-dev python-dev
