@@ -11,7 +11,8 @@ from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
 from shutil import rmtree
 from datetime import datetime
 from models import (UserJob_Model)
-
+from boto import utils
+import socket
 
 os.getcwd()
 PATH_DOWNLOAD = os.getcwd() + '/download'
@@ -22,6 +23,12 @@ AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
 JOBS_QUEUE = 'snapsat_composite_queue'
 REGION = 'us-west-2'
+
+try:
+    INSTANCE_METADATA = utils.get_instance_metadata(timeout=0.5, num_retries=1)
+    INSTANCE_ID = INSTANCE_METADATA['instance-id']
+except:
+    INSTANCE_ID = socket.gethostname()
 
 
 def cleanup_downloads(folder_path):
@@ -177,7 +184,12 @@ def upload_to_s3(file_location, file_name_zip, input_path, job):
 
 
 def process(job):
-    """Given bands and sceneID, download, image process, zip & upload to S3."""
+    """
+    Given bands and sceneID, download, image process, zip & upload to S3.
+    """
+    # set worker instance id for job
+    UserJob_Model.set_worker_instance_id(job['job_id'], INSTANCE_ID)
+
     # download and set vars
     input_path, bands, scene_id = download_and_set(job, PATH_DOWNLOAD)
 

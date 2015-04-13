@@ -13,6 +13,8 @@ from shutil import rmtree
 from datetime import datetime
 import subprocess
 from models import RenderCache_Model, UserJob_Model
+from boto import utils
+import socket
 
 
 os.getcwd()
@@ -24,6 +26,12 @@ AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
 JOBS_QUEUE = 'snapsat_preview_queue'
 REGION = 'us-west-2'
+
+try:
+    INSTANCE_METADATA = utils.get_instance_metadata(timeout=0.5, num_retries=1)
+    INSTANCE_ID = INSTANCE_METADATA['instance-id']
+except:
+    INSTANCE_ID = socket.gethostname()
 
 
 def cleanup_downloads(folder_path):
@@ -119,6 +127,9 @@ def checking_for_jobs():
 
 def process(job):
     """Given bands and sceneID, download, image process, zip & upload to S3."""
+    # set worker instance id for job
+    UserJob_Model.set_worker_instance_id(job['job_id'], INSTANCE_ID)
+
     scene_id = str(job['scene_id'])
     input_path = os.path.join(path_download, scene_id)
 
