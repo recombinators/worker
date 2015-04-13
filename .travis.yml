@@ -27,6 +27,8 @@ install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib gdal scikit-image requests six nose dateutil
   - pip install --install-option="--no-cython-compile" cython
   - export PATH=$PATH:$PWD/landsat-util/landsat/
+  - pwd
+  - ls -la
   - cd landsat_util
   - pip install -e .
   - cd ..
