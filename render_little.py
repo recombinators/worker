@@ -14,6 +14,7 @@ from datetime import datetime
 import subprocess
 from models import RenderCache_Model, UserJob_Model
 from boto import utils
+import socket
 
 
 os.getcwd()
@@ -26,8 +27,11 @@ AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
 JOBS_QUEUE = 'snapsat_preview_queue'
 REGION = 'us-west-2'
 
-INSTANCE_METADATA = utils.get_instance_metadata(timeout=0.5, num_retries=1)
-INSTANCE_ID = INSTANCE_METADATA['instance-id']
+try:
+    INSTANCE_METADATA = utils.get_instance_metadata(timeout=0.5, num_retries=1)
+    INSTANCE_ID = INSTANCE_METADATA['instance-id']
+except:
+    INSTANCE_ID = socket.gethostname()
 
 
 def cleanup_downloads(folder_path):
