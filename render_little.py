@@ -128,7 +128,7 @@ def checking_for_jobs():
 def process(job):
     """Given bands and sceneID, download, image process, zip & upload to S3."""
     # set worker instance id for job
-    UserJob_Model.set_job_status(job['job_id'], INSTANCE_ID)
+    UserJob_Model.set_worker_instance_id(job['job_id'], INSTANCE_ID)
 
     scene_id = str(job['scene_id'])
     input_path = os.path.join(path_download, scene_id)
