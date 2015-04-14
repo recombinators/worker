@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/recombinators/landsat_worker.svg?branch=develop)](https://travis-ci.org/recombinators/landsat_worker)
+[![Build Status](https://travis-ci.org/recombinators/worker.svg?branch=tests)](https://travis-ci.org/recombinators/worker)
 
 Worker
 ======

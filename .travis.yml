@@ -21,13 +21,19 @@ before_install:
   - sudo pip install homura
   - sudo pip install termcolor
   - sudo apt-get install python-dateutil
-  - sudo apt-get install rasterio
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib gdal scikit-image requests six nose dateutil
+  - conda config --add channels https://conda.binstar.org/rsignell
+  - conda install --yes -c https://conda.binstar.org/ioos-rhel6 rasterio
   - pip install --install-option="--no-cython-compile" cython
   - export PATH=$PATH:$PWD/landsat-util/landsat/
+  - pwd
+  - ls -la
+  - cd landsat-util
+  - pip install -e .
+  - cd ..
   - pip install -r requirements.txt
 script:
   - py.test -s -v test_render_1.py

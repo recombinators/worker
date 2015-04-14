@@ -1,7 +1,7 @@
 import sys
 sys.path.append('../landsat-util/landsat')
 import pytest
-import render_1
+import render_little
 import models
 from sqlalchemy import create_engine
 from datetime import datetime
@@ -10,8 +10,6 @@ import unittest
 import os
 import factory
 import factory.alchemy
-from models import RenderCache_Model, UserJob_Model
-
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -101,61 +99,35 @@ class TestProcess(unittest.TestCase):
     test_file_location = (os.getcwd() +
         '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.TIF')
     test_file_name_zip = 'LC80470272015005LGN00_bands_432.zip'
+    test_file_png = 'pre_LC80470272015005LGN00_bands_432.png'
 
-    @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
+    @mock.patch('recombinators_landsat.landsat_worker.render_little.Downloader')
     def test_download_returns_correct_values(self, Downloader):
-        input_path, bands, scene_id = (render_1.download_and_set(
-            self.fake_job_message, render_1.PATH_DOWNLOAD))
+        bands, input_path, scene_id = (render_little.download_and_set(
+            self.fake_job_message))
         self.assertEqual(input_path,
                          os.getcwd() + '/download/LC80470272015005LGN00')
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
-    @mock.patch('recombinators_landsat.landsat_worker.render_1.Process')
-    def test_process_image(self, Process):
-        band_output, file_location = (render_1.process_image(
-            self.fake_job_message,
-            self.test_input_path,
-            self.test_bands,
-            render_1.PATH_DOWNLOAD,
-            self.test_scene_id)
-        )
-        self.assertEqual(band_output, '432')
-        self.assertEqual(
-            file_location, os.getcwd() +
-            '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.TIF')
-
-    @mock.patch('recombinators_landsat.landsat_worker.render_1.zipfile')
-    def test_zip_file(self, zipfile):
-        file_name_zip = render_1.zip_file(self.fake_job_message,
-                                          self.test_band_output,
-                                          self.test_scene_id,
-                                          self.test_input_path,
-                                          self.test_file_location)
-        self.assertEqual(file_name_zip, "LC80470272015005LGN00_bands_432.zip")
-
-    @mock.patch('recombinators_landsat.landsat_worker.render_1.Key')
-    @mock.patch('recombinators_landsat.landsat_worker.render_1.boto')
+    @mock.patch('recombinators_landsat.landsat_worker.render_little.Key')
+    @mock.patch('recombinators_landsat.landsat_worker.render_little.boto')
     def test_upload_to_s3(self, boto, Key):
-        file_location = render_1.upload_to_s3(self.test_file_location,
-                                              self.test_file_name_zip,
-                                              self.test_input_path,
-                                              self.fake_job_message
-                                              )
-        self.assertEqual(
-            file_location, os.getcwd() +
-            '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.zip')
+        self.assertIsNone(render_little.upload_to_s3(self.test_file_location,
+                                                     self.test_file_png,
+                                                     self.fake_job_message
+                                                     ))
 
-    @mock.patch('recombinators_landsat.landsat_worker.render_1.Key')
-    @mock.patch('recombinators_landsat.landsat_worker.render_1.boto')
+    @mock.patch('recombinators_landsat.landsat_worker.render_little.Key')
+    @mock.patch('recombinators_landsat.landsat_worker.render_little.boto')
     def test_upload_to_s3_fails_with_exception(self, boto, Key):
         # missing job argument to cause exception
         with self.assertRaises(Exception):
-            render_1.upload_to_s3(self.test_file_location,
-                                  self.test_file_name_zip,
-                                  self.test_input_path,
-                                  None
-                                  )
+            render_little.upload_to_s3(self.test_file_location,
+                                       self.test_file_name_zip,
+                                       self.test_input_path,
+                                       None
+                                       )
 
 
 def test_cleanup_downloads():
@@ -168,4 +140,5 @@ def test_cleanup_downloads():
     f.write('this is a test')
     f.close()
 
-    assert render_1.cleanup_downloads(test_dir) == True
+    assert render_little.cleanup_downloads(test_dir) == True
+
