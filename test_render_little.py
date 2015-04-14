@@ -102,8 +102,8 @@ class TestProcess(unittest.TestCase):
 
     @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
     def test_download_returns_correct_values(self, Downloader):
-        input_path, bands, scene_id = (render_little.download_and_set(
-            self.fake_job_message, render_little.PATH_DOWNLOAD))
+        bands, input_path, scene_id = (render_little.download_and_set(
+            self.fake_job_message))
         self.assertEqual(input_path,
                          os.getcwd() + '/download/LC80470272015005LGN00')
         self.assertEqual(bands, [u'4', u'3', u'2'])

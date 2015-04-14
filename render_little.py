@@ -125,14 +125,14 @@ def download_and_set(job):
     if not os.path.exists(input_path):
         os.makedirs(input_path)
         print 'made directory'
-        try:
-            b = Downloader(verbose=False, download_dir=PATH_DOWNLOAD)
-            bands = [job['band_1'], job['band_2'], job['band_3']]
-            b.download([scene_id], bands)
-            print 'done downloading'
-        except:
-            raise Exception('Download failed')
-    return b, bands, input_path, scene_id
+    try:
+        b = Downloader(verbose=False, download_dir=PATH_DOWNLOAD)
+        bands = [job['band_1'], job['band_2'], job['band_3']]
+        b.download([scene_id], bands)
+        print 'done downloading'
+    except:
+        raise Exception('Download failed')
+    return bands, input_path, scene_id
 
 
 def resize_bands(bands, input_path, scene_id):
@@ -207,7 +207,7 @@ def upload_to_s3(b, file_location, file_png, job):
 def process(job):
     """Given bands and sceneID, download, image process, zip & upload to S3."""
     # download and set vars
-    b, bands, input_path, scene_id = download_and_set(job)
+    bands, input_path, scene_id = download_and_set(job)
 
     # resize bands
     delete_me, file_name, rename_me = resize_bands(bands, input_path, scene_id)
