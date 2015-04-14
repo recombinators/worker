@@ -182,25 +182,24 @@ class UserJob_Model(Base):
             except:
                 print 'Could not update Rendered db'
             try:
-                cls.email(jobid)
+                cls.email_user(jobid)
             except:
                 print 'Email failed'
 
     @classmethod
-    def email(cls, jobid):
+    def email_user(cls, jobid):
         """
         If request contains email_address, send email to user with a link to
         the full render zip file.
 
         """
-        import pdb; pdb.set_trace()
-        job = DBSession.query(cls).filter(cls.jobid == int(jobid))
-        email_address = jobid.email
+        job = DBSession.query(cls).filter(cls.jobid == int(jobid)).first()
+        email_address = job.email
         if email_address:
             bands = str(job.band1) + str(job.band2) + str(job.band3)
             scene = job.entityid
-            full_render = "http://snapsatcomposites.s3.amazonaws.com/{}_bands_"
-            "{}.zip".format(scene, bands)
+            full_render = ("http://snapsatcomposites.s3.amazonaws.com/{}_bands"
+                           "_{}.zip").format(scene, bands)
             scene_url = 'http://snapsat.org/scene/{}#{}'.format(scene, bands)
             request_url = 'https://api.mailgun.net/v2/{0}/messages'.format(
                 mailgun_url)
@@ -228,7 +227,3 @@ class UserJob_Model(Base):
             transaction.commit()
         except:
             print 'database write failed'
-
-
-if __name__ == "__main__":
-    UserJob_Model.email(1)
