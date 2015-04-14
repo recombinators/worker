@@ -118,7 +118,6 @@ def checking_for_jobs():
 
 # begin process() breakdown here:
 
-
 def download_and_set(job):
     scene_id = str(job['scene_id'])
     input_path = os.path.join(PATH_DOWNLOAD, scene_id)
@@ -152,20 +151,14 @@ def resize_bands(bands, input_path, scene_id):
     print 'done resizing 3 images'
     return delete_me, file_name, rename_me
 
-def process(job):
-    """Given bands and sceneID, download, image process, zip & upload to S3."""
-    # download and set vars
-    b, bands, input_path, scene_id = download_and_set(job)
 
-    # resize bands
-    delete_me, file_name, rename_me = resize_bands(bands, input_path, scene_id)
-
-    # remove original band files and rename downsized to correct name
+def remove_and_rename(delete_me, rename_me):
     for i, o in zip(rename_me, delete_me):
         os.remove(o)
         os.rename(i, o)
 
-    # call landsat-util to merge images
+
+def merge_images(input_path, bands):
     try:
         processor = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD,
                             verbose=True)
@@ -173,18 +166,24 @@ def process(job):
     except:
         raise Exception('Processing/landsat-util failed')
 
+
+def name_files(bands, file_name, input_path, scene_id):
     band_output = ''
     for i in bands:
         band_output = '{}{}'.format(band_output, i)
     file_name = '{}_bands_{}'.format(scene_id, band_output)
     file_tif = '{}.TIF'.format(os.path.join(input_path, file_name))
     file_location = '{}png'.format(file_tif[:-3])
+    return file_location, file_name, file_tif
 
-    # convert from TIF to png
+
+def tif_to_png(file_location, file_name, file_tif):
     subprocess.call(['convert', file_tif, file_location])
     file_png = 'pre_{}.png'.format(file_name)
+    return file_png
 
-    # upload to s3
+
+def upload_to_s3(b, file_location, file_png, job):
     try:
         print 'Uploading to S3'
         address = 'http://'
@@ -204,6 +203,32 @@ def process(job):
     except:
         raise Exception('S3 Upload failed')
 
+
+def process(job):
+    """Given bands and sceneID, download, image process, zip & upload to S3."""
+    # download and set vars
+    b, bands, input_path, scene_id = download_and_set(job)
+
+    # resize bands
+    delete_me, file_name, rename_me = resize_bands(bands, input_path, scene_id)
+
+    # remove original band files and rename downsized to correct name
+    remove_and_rename(delete_me, rename_me)
+
+    # call landsat-util to merge images
+    merge_images(input_path, bands)
+
+    # construct the file names
+    file_location, file_name, file_tif = name_files(bands,
+                                                    file_name,
+                                                    input_path,
+                                                    scene_id)
+
+    # convert from TIF to png
+    file_png = tif_to_png(file_location, file_name, file_tif)
+
+    # upload to s3
+    upload_to_s3(b, file_location, file_png, job)
 
     # delete files
     try:
