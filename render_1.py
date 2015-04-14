@@ -215,5 +215,4 @@ def process(job):
     return True
 
 if __name__ == '__main__':
-    # main()
-    UserJob_Model.email_user(2559)
+    main()
