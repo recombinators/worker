@@ -10,7 +10,7 @@ from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle,)
 from shutil import rmtree
 from datetime import datetime
-from models import (UserJob_Model)
+from models import UserJob_Model
 from boto import utils
 import socket
 
@@ -215,4 +215,5 @@ def process(job):
     return True
 
 if __name__ == '__main__':
-    main()
+    # main()
+    UserJob_Model.email_user(2559)
