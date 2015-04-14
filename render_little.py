@@ -1,5 +1,6 @@
 import os
 import sys
+sys.path.append('landsat-util/landsat')
 import boto
 import subprocess
 from downloader import Downloader
@@ -13,7 +14,6 @@ import socket
 from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle)
 
-sys.path.append('landsat-util/landsat')
 
 
 os.getcwd()
