@@ -208,10 +208,10 @@ class UserJob_Model(Base):
                 'from': 'no-reply@snapsat.org',
                 'to': email_address,
                 'subject': 'Snapsat is rendering your request',
-                'text': "Thank you for using Snapsat.\nAfter we've rendered "
-                        "your full composite, it will be available here:\n"
-                        "{}\nScene data can be found here:\n {}".format(
-                            full_render, scene_url)
+                'text': ("Thank you for using Snapsat.\nAfter we've rendered "
+                         "your full composite, it will be available here:\n"
+                         "{}\nScene data can be found here:\n {}").format(
+                    full_render, scene_url)
             })
 
     @classmethod
