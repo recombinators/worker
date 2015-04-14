@@ -176,7 +176,7 @@ def process(job):
     # call landsat-util to merge images
     try:
         processor = Process(input_path, bands=bands, dst_path=path_download,
-                            verbose=True)
+                            verbose=False)
         processor.run(pansharpen=False)
     except:
         raise Exception('Processing/landsat-util failed')
