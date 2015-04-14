@@ -227,3 +227,7 @@ class UserJob_Model(Base):
             transaction.commit()
         except:
             print 'database write failed'
+
+
+if __name__ == "__main__":
+    UserJob_Model.email(1)
