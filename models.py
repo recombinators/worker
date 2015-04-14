@@ -7,6 +7,9 @@ import transaction
 import os
 from datetime import datetime
 
+mailgun_key = os.environ['mailgun_key']
+mailgun_url = os.environ['mailgun_url']
+
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
@@ -140,7 +143,7 @@ class UserJob_Model(Base):
             session.refresh(job)
             pk = job.jobid
             transaction.commit()
-            transaction.begin() # could do this or a subtransacation, ie open a transaction at the beginning of this method.
+            transaction.begin()  # could do this or a subtransacation, ie open a transaction at the beginning of this method.
         except:
             return None
         try:
@@ -162,9 +165,9 @@ class UserJob_Model(Base):
             current_time = datetime.utcnow()
             DBSession.query(cls).filter(cls.jobid == int(jobid)).update(
                 {"jobstatus": status,
-                table_key[int(status)]: current_time,
-                "lastmodified": current_time
-                })
+                 table_key[int(status)]: current_time,
+                 "lastmodified": current_time
+                 })
             transaction.commit()
         except:
             print 'database write failed'
@@ -174,3 +177,33 @@ class UserJob_Model(Base):
                 RenderCache_Model.update(jobid, False, url)
             except:
                 print 'Could not update Rendered db'
+            try:
+                email(request, bands)
+            except:
+                print 'Email failed'
+
+    def email(request, bands):
+        """
+        If request contains email_address, send email to user with a link to the
+        full render zip file.
+
+        """
+        email_address = request.params.get('email_address')
+        if email_address:
+            full_render = "http://snapsatcomposites.s3.amazonaws.com/{}_bands_{}."\
+                          "zip".format(request.matchdict['scene_id'], bands)
+            scene = request.matchdict['scene_id']
+            scene_url = 'http://snapsat.org/scene/{}#{}'.format(scene, bands)
+            request_url = 'https://api.mailgun.net/v2/{0}/messages'.format(
+                mailgun_url)
+            requests.post(request_url, auth=('api', mailgun_key),
+                          data={
+                'from': 'no-reply@snapsat.org',
+                'to': email_address,
+                'subject': 'Snapsat is rendering your request',
+                'text': "Thank you for using Snapsat.\nAfter we've rendered "
+                        "your full composite, it will be available here:\n"
+                        "{}\nScene data can be found here:\n {}".format(
+                            full_render, scene_url)
+
+            })
