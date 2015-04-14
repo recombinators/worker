@@ -136,11 +136,7 @@ def download_and_set(job):
     return b, bands, input_path, scene_id
 
 
-def process(job):
-    """Given bands and sceneID, download, image process, zip & upload to S3."""
-    # download and set vars
-    b, bands, input_path, scene_id = download_and_set(job)
-
+def resize_bands(bands, input_path, scene_id):
     delete_me, rename_me = [], []
     # Resize each band
     for band in bands:
@@ -154,6 +150,15 @@ def process(job):
         if not os.path.exists(file_name2):
             raise Exception('gdal_translate did not downsize images')
     print 'done resizing 3 images'
+    return delete_me, file_name, rename_me
+
+def process(job):
+    """Given bands and sceneID, download, image process, zip & upload to S3."""
+    # download and set vars
+    b, bands, input_path, scene_id = download_and_set(job)
+
+    # resize bands
+    delete_me, file_name, rename_me = resize_bands(bands, input_path, scene_id)
 
     # remove original band files and rename downsized to correct name
     for i, o in zip(rename_me, delete_me):
