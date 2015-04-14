@@ -13,7 +13,6 @@ import factory.alchemy
 from models import RenderCache_Model, UserJob_Model
 
 
-
 @pytest.fixture(scope='session', autouse=True)
 def connection(request):
     engine = create_engine('postgresql://postgres@/test_bar')
