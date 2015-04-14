@@ -26,7 +26,7 @@ before_install:
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib gdal scikit-image requests six nose dateutil
   - conda config --add channels https://conda.binstar.org/rsignell
-  - conda install -c https://conda.binstar.org/ioos-rhel6 rasterio
+  - conda install --yes -c https://conda.binstar.org/ioos-rhel6 rasterio
   - pip install --install-option="--no-cython-compile" cython
   - export PATH=$PATH:$PWD/landsat-util/landsat/
   - pwd
