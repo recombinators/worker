@@ -1,20 +1,19 @@
-"""Render preview from queue and upload to s3 bucket."""
-
+import os
 import sys
-sys.path.append('landsat-util/landsat')
+import boto
+import subprocess
 from downloader import Downloader
 from image import Process
-import os
-import boto
 from boto.s3.key import Key
-from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
-                 delete_message_from_handle,)
 from shutil import rmtree
 from datetime import datetime
-import subprocess
-from models import RenderCache_Model, UserJob_Model
+from models import UserJob_Model
 from boto import utils
 import socket
+from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
+                 delete_message_from_handle)
+
+sys.path.append('landsat-util/landsat')
 
 
 os.getcwd()
@@ -35,8 +34,10 @@ except:
 
 
 def cleanup_downloads(folder_path):
-    """Clean up download folder if process fails. Return True if download folder
-       empty"""
+    """
+    Clean up download folder if process fails.
+    Return True if download folder empty.
+    """
     for file_object in os.listdir(folder_path):
         file_object_path = os.path.join(folder_path, file_object)
         if os.path.isfile(file_object_path):
@@ -50,26 +51,31 @@ def cleanup_downloads(folder_path):
 
 
 def write_activity(message):
-    """Write to activity log."""
+    """
+    Write to activity log.
+    """
     fo = open(path_activity_log, 'a')
     fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
     fo.close()
 
 
 def write_error(message):
-    """Write to error log."""
+    """
+    Write to error log.
+    """
     fo = open(path_error_log, 'a')
     fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
     fo.close()
 
 
 def main():
-    """Main."""
     checking_for_jobs()
 
 
 def checking_for_jobs():
-    """Poll jobs queue for jobs."""
+    """
+    Poll jobs queue for jobs.
+    """
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
                                   AWS_SECRET_ACCESS_KEY)
     write_activity(SQSconn)
@@ -126,7 +132,9 @@ def checking_for_jobs():
 
 
 def process(job):
-    """Given bands and sceneID, download, image process, zip & upload to S3."""
+    """
+    Given bands and sceneID, download, image process, zip & upload to S3.
+    """
     # set worker instance id for job
     UserJob_Model.set_worker_instance_id(job['job_id'], INSTANCE_ID)
 
@@ -136,13 +144,13 @@ def process(job):
     # Create a subdirectory
     if not os.path.exists(input_path):
         os.makedirs(input_path)
-        print 'made directory'
+        print 'Directory created.'
 
     try:
         b = Downloader(verbose=False, download_dir=path_download)
         bands = [job['band_1'], job['band_2'], job['band_3']]
         b.download([scene_id], bands)
-        print 'done downloading'
+        print 'Finished downloading.'
     except:
         raise Exception('Download failed')
 
@@ -158,7 +166,7 @@ def process(job):
                          file_name, file_name2])
         if not os.path.exists(file_name2):
             raise Exception('gdal_translate did not downsize images')
-    print 'done resizing 3 images'
+    print 'Finished resizing three images.'
 
     # remove original band files and rename downsized to correct name
     for i, o in zip(rename_me, delete_me):
@@ -203,7 +211,6 @@ def process(job):
         UserJob_Model.set_job_status(job['job_id'], 5, out)
     except:
         raise Exception('S3 Upload failed')
-
 
     # delete files
     try:
