@@ -186,6 +186,7 @@ class UserJob_Model(Base):
             except:
                 print 'Email failed'
 
+    @classmethod
     def email(cls, jobid):
         """
         If request contains email_address, send email to user with a link to
