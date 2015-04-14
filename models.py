@@ -6,6 +6,7 @@ from sqlalchemy import Column, Integer, UnicodeText, Boolean, DateTime
 import transaction
 import os
 from datetime import datetime
+import requests
 
 mailgun_key = os.environ['mailgun_key']
 mailgun_url = os.environ['mailgun_url']
@@ -179,20 +180,22 @@ class UserJob_Model(Base):
             except:
                 print 'Could not update Rendered db'
             try:
-                email(request, bands)
+                email(jobid)
             except:
                 print 'Email failed'
 
-    def email(request, bands):
+    def email(cls, jobid):
         """
-        If request contains email_address, send email to user with a link to the
-        full render zip file.
+        If request contains email_address, send email to user with a link to
+        the full render zip file.
 
         """
-        email_address = request.params.get('email_address')
+        job = DBSession.query(cls).filter(cls.jobid == int(jobid))
+        email_address = jobid.email
+        bands = str(job.band1) + str(job.band2) + str(job.band3)
         if email_address:
             full_render = "http://snapsatcomposites.s3.amazonaws.com/{}_bands_{}."\
-                          "zip".format(request.matchdict['scene_id'], bands)
+                          "zip".format(job.entityid, bands)
             scene = request.matchdict['scene_id']
             scene_url = 'http://snapsat.org/scene/{}#{}'.format(scene, bands)
             request_url = 'https://api.mailgun.net/v2/{0}/messages'.format(
