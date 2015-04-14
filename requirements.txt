@@ -1,7 +1,6 @@
 affine==1.1.0
 amqp==1.4.6
 anyjson==0.3.3
-app==0.0
 awscli==1.7.19
 bcdoc==0.13.0
 beautifulsoup4==4.3.2
