@@ -1,5 +1,4 @@
 import sys
-sys.path.append('../landsat-util/landsat')
 import pytest
 import render_1
 import models
@@ -10,6 +9,9 @@ import unittest
 import os
 import factory
 import factory.alchemy
+from models import RenderCache_Model, UserJob_Model
+
+sys.path.append('../landsat-util/landsat')
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -167,4 +169,3 @@ def test_cleanup_downloads():
     f.close()
 
     assert render_1.cleanup_downloads(test_dir) == True
-

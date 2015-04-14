@@ -1,18 +1,18 @@
-import sys
-sys.path.append('landsat-util/landsat')
 from landsat.downloader import Downloader
 from image import Process
-import os
-import boto
 from boto.s3.key import Key
-import zipfile
-from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
-                 delete_message_from_handle,)
 from shutil import rmtree
 from datetime import datetime
-from models import (UserJob_Model)
 from boto import utils
 import socket
+from models import UserJob_Model
+from sqs import (make_SQS_connection, get_queue, get_message,
+                 get_attributes, delete_message_from_handle)
+import os
+import boto
+import zipfile
+import sys
+sys.path.append('landsat-util/landsat')
 
 os.getcwd()
 PATH_DOWNLOAD = os.getcwd() + '/download'
@@ -32,8 +32,10 @@ except:
 
 
 def cleanup_downloads(folder_path):
-    """Clean up download folder if process fails. Return True if download folder
-       empty"""
+    """
+    Clean up download folder if process fails.
+    Return True if the download folder is empty.
+    """
     for file_object in os.listdir(folder_path):
         file_object_path = os.path.join(folder_path, file_object)
         if os.path.isfile(file_object_path):
@@ -47,26 +49,31 @@ def cleanup_downloads(folder_path):
 
 
 def write_activity(message):
-    """Write to activity log."""
+    """
+    Write to activity log.
+    """
     fo = open(PATH_ACTIVITY_LOG, 'a')
     fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
     fo.close()
 
 
 def write_error(message):
-    """Write to error log."""
+    """
+    Write to error log.
+    """
     fo = open(PATH_ERROR_LOG, 'a')
     fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
     fo.close()
 
 
 def main():
-    """Main."""
     checking_for_jobs()
 
 
 def checking_for_jobs():
-    """Poll jobs queue for jobs."""
+    """
+    Poll jobs queue for jobs.
+    """
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
                                   AWS_SECRET_ACCESS_KEY)
     write_activity(SQSconn)
@@ -121,11 +128,11 @@ def checking_for_jobs():
                             .format(cleanup_status))
                 UserJob_Model.set_job_status(job_attributes['job_id'], 10)
 
-# begin process() breakdown here:
-
 
 def download_and_set(job, PATH_DOWNLOAD):
-    """Download the image file"""
+    """
+    Download the image file.
+    """
     UserJob_Model.set_job_status(job['job_id'], 1)
     b = Downloader(verbose=False, download_dir=PATH_DOWNLOAD)
     scene_id = str(job['scene_id'])
@@ -136,12 +143,13 @@ def download_and_set(job, PATH_DOWNLOAD):
 
 
 def process_image(job, input_path, bands, PATH_DOWNLOAD, scene_id):
+    """
+    Process images using landsat-util.
+    """
     UserJob_Model.set_job_status(job['job_id'], 2)
     c = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD, verbose=True)
     c.run(pansharpen=False)
-
     band_output = ''
-
     for band in bands:
         band_output = '{}{}'.format(band_output, band)
     file_name = '{}_bands_{}.TIF'.format(scene_id, band_output)
@@ -150,6 +158,9 @@ def process_image(job, input_path, bands, PATH_DOWNLOAD, scene_id):
 
 
 def zip_file(job, band_output, scene_id, input_path, file_location):
+    """
+    Compress the image.
+    """
     print 'Zipping file'
     UserJob_Model.set_job_status(job['job_id'], 3)
     file_name_zip = '{}_bands_{}.zip'.format(scene_id, band_output)
@@ -161,6 +172,9 @@ def zip_file(job, band_output, scene_id, input_path, file_location):
 
 
 def upload_to_s3(file_location, file_name_zip, input_path, job):
+    """
+    Upload processed images to S3.
+    """
     try:
         print 'Uploading to S3'
         UserJob_Model.set_job_status(job['job_id'], 4)
@@ -187,9 +201,9 @@ def process(job):
     """
     Given bands and sceneID, download, image process, zip & upload to S3.
     """
+
     # set worker instance id for job
     UserJob_Model.set_worker_instance_id(job['job_id'], INSTANCE_ID)
-
     # download and set vars
     input_path, bands, scene_id = download_and_set(job, PATH_DOWNLOAD)
 
