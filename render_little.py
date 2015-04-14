@@ -12,7 +12,7 @@ from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
 from shutil import rmtree
 from datetime import datetime
 import subprocess
-from models import RenderCache_Model, UserJob_Model
+from models import UserJob_Model
 
 
 os.getcwd()
@@ -116,24 +116,30 @@ def checking_for_jobs():
                 write_error('Cleanup downloads success = {}'
                             .format(cleanup_status))
 
+# begin process() breakdown here:
 
-def process(job):
-    """Given bands and sceneID, download, image process, zip & upload to S3."""
+
+def download_and_set(job):
     scene_id = str(job['scene_id'])
     input_path = os.path.join(path_download, scene_id)
-
-    # Create a subdirectory
+        # Create a subdirectory
     if not os.path.exists(input_path):
         os.makedirs(input_path)
         print 'made directory'
+        try:
+            b = Downloader(verbose=False, download_dir=path_download)
+            bands = [job['band_1'], job['band_2'], job['band_3']]
+            b.download([scene_id], bands)
+            print 'done downloading'
+        except:
+            raise Exception('Download failed')
+    return b, bands, input_path, scene_id
 
-    try:
-        b = Downloader(verbose=False, download_dir=path_download)
-        bands = [job['band_1'], job['band_2'], job['band_3']]
-        b.download([scene_id], bands)
-        print 'done downloading'
-    except:
-        raise Exception('Download failed')
+
+def process(job):
+    """Given bands and sceneID, download, image process, zip & upload to S3."""
+    # download and set vars
+    b, bands, input_path, scene_id = download_and_set(job)
 
     delete_me, rename_me = [], []
     # Resize each band
