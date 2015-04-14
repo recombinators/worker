@@ -1,3 +1,4 @@
+six==1.9.0
 affine==1.1.0
 amqp==1.4.6
 anyjson==0.3.3
@@ -27,7 +28,6 @@ rasterio==0.18
 requests==2.5.3
 scikit-image==0.10.1
 scipy==0.15.1
-six==1.9.0
 SQLAlchemy==0.9.9
 termcolor==1.1.0
 transaction==1.4.3

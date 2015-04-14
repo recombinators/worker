@@ -53,10 +53,6 @@ docs/_build/
 # PyBuilder
 target/
 
-# Sublime
-*.sublime-project
-*.sublime-workspace
-
 # Random
 *.TIF
 dl/
@@ -66,7 +62,7 @@ download/
 logs/
 
 # Sublime
-*.sublime-project
-*.sublime-workspace
+**/*.sublime-project
+**/*.sublime-workspace
 
 *.DS_Store
