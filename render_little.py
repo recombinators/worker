@@ -183,10 +183,9 @@ def tif_to_png(file_location, file_name, file_tif):
     return file_png
 
 
-def upload_to_s3(b, file_location, file_png, job):
+def upload_to_s3(file_location, file_png, job):
     try:
         print 'Uploading to S3'
-        address = 'http://'
         conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
                                 aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         b = conne.get_bucket('snapsatpreviews')
@@ -228,7 +227,7 @@ def process(job):
     file_png = tif_to_png(file_location, file_name, file_tif)
 
     # upload to s3
-    upload_to_s3(b, file_location, file_png, job)
+    upload_to_s3(file_location, file_png, job)
 
     # delete files
     try:
