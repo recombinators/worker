@@ -8,8 +8,8 @@ import os
 from datetime import datetime
 import requests
 
-mailgun_key = os.environ['mailgun_key']
-mailgun_url = os.environ['mailgun_url']
+mailgun_key = os.environ['MAILGUN_KEY']
+mailgun_url = os.environ['MAILGUN_URL']
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
