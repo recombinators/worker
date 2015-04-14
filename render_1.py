@@ -1,3 +1,4 @@
+sys.path.append('landsat-util/landsat')
 from landsat.downloader import Downloader
 from image import Process
 from boto.s3.key import Key
@@ -12,7 +13,6 @@ import os
 import boto
 import zipfile
 import sys
-sys.path.append('landsat-util/landsat')
 
 os.getcwd()
 PATH_DOWNLOAD = os.getcwd() + '/download'
