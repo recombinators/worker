@@ -101,8 +101,13 @@ class TestProcess(unittest.TestCase):
         '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.TIF')
     test_file_name_zip = 'LC80470272015005LGN00_bands_432.zip'
 
+<<<<<<< Updated upstream
     @mock.patch('recombinators_landsat.landsat_worker.render_1.Downloader')
     def test_download_returns_correct_values(self, Downloader):
+=======
+    @mock.patch('recombinators_landsat.landsat_worker.render_1.b')
+    def test_download_returns_correct_values(self):
+>>>>>>> Stashed changes
         input_path, bands, scene_id = (render_1.download_and_set(
             self.fake_job_message, render_1.PATH_DOWNLOAD))
         self.assertEqual(input_path,
@@ -110,6 +115,7 @@ class TestProcess(unittest.TestCase):
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
+<<<<<<< Updated upstream
     @mock.patch('recombinators_landsat.landsat_worker.render_1.Process')
     def test_process_image(self, Process):
         band_output, file_location = (render_1.process_image(
@@ -118,6 +124,16 @@ class TestProcess(unittest.TestCase):
             self.test_bands,
             render_1.PATH_DOWNLOAD,
             self.test_scene_id)
+=======
+    @mock.patch('recombinators_landsat.landsat_worker.render_1.b')
+    def test_download_updates_job_status(self):
+        input_path, bands, scene_id = (render_1.download_and_set(
+            self.fake_job_message, render_1.PATH_DOWNLOAD))
+        job_f = JobFactory()
+        models.UserJob_Model.set_job_status(job_f.jobid, 1)
+        self.assertEqual(
+            [job_f], self.session.query(models.UserJob_Model).all()
+>>>>>>> Stashed changes
         )
         self.assertEqual(band_output, '432')
         self.assertEqual(
