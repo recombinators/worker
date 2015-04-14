@@ -6,6 +6,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, UnicodeText, Boolean, DateTime
 from datetime import datetime
+import requests
+
+mailgun_key = os.environ['MAILGUN_KEY']
+mailgun_url = os.environ['MAILGUN_URL']
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
@@ -151,6 +155,8 @@ class UserJob_Model(Base):
             session.refresh(job)
             pk = job.jobid
             transaction.commit()
+            # could do this or a subtransacation, ie open a transaction at the
+            # beginning of this method.
             transaction.begin()
         except:
             return None
@@ -173,11 +179,11 @@ class UserJob_Model(Base):
                      10: "status10time"}
         try:
             current_time = datetime.utcnow()
-            DBSession.query(cls).filter(cls.jobid == int(jobid)).update({
-                "jobstatus": status,
-                table_key[int(status)]: current_time,
-                "lastmodified": current_time
-                })
+            DBSession.query(cls).filter(cls.jobid == int(jobid)).update(
+                {"jobstatus": status,
+                 table_key[int(status)]: current_time,
+                 "lastmodified": current_time
+                 })
             transaction.commit()
         except:
             print 'Database write failed.'
@@ -187,6 +193,38 @@ class UserJob_Model(Base):
                 RenderCache_Model.update(jobid, False, url)
             except:
                 print 'Could not update Rendered db'
+            try:
+                cls.email_user(jobid)
+            except:
+                print 'Email failed'
+
+    @classmethod
+    def email_user(cls, jobid):
+        """
+        If request contains email_address, send email to user with a link to
+        the full render zip file.
+
+        """
+        job = DBSession.query(cls).filter(cls.jobid == int(jobid)).first()
+        email_address = job.email
+        if email_address:
+            bands = str(job.band1) + str(job.band2) + str(job.band3)
+            scene = job.entityid
+            full_render = ("http://snapsatcomposites.s3.amazonaws.com/{}_bands"
+                           "_{}.zip").format(scene, bands)
+            scene_url = 'http://snapsat.org/scene/{}#{}'.format(scene, bands)
+            request_url = 'https://api.mailgun.net/v2/{0}/messages'.format(
+                mailgun_url)
+            requests.post(request_url, auth=('api', mailgun_key),
+                          data={
+                'from': 'no-reply@snapsat.org',
+                'to': email_address,
+                'subject': 'Snapsat is rendering your request',
+                'text': ("Thank you for using Snapsat.\nAfter we've rendered "
+                         "your full composite, it will be available here:\n"
+                         "{}\nScene data can be found here:\n {}").format(
+                    full_render, scene_url)
+            })
 
     @classmethod
     def set_worker_instance_id(cls, jobid, worker_instance_id):
