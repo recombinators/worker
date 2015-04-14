@@ -147,7 +147,7 @@ def process_image(job, input_path, bands, PATH_DOWNLOAD, scene_id):
     Process images using landsat-util.
     """
     UserJob_Model.set_job_status(job['job_id'], 2)
-    c = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD, verbose=True)
+    c = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD, verbose=False)
     c.run(pansharpen=False)
     band_output = ''
     for band in bands:

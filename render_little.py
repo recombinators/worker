@@ -182,7 +182,7 @@ def remove_and_rename(delete_me, rename_me):
 def merge_images(input_path, bands):
     try:
         processor = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD,
-                            verbose=True)
+                            verbose=False)
         processor.run(pansharpen=False)
     except:
         raise Exception('Processing/landsat-util failed')
