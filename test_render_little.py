@@ -124,7 +124,7 @@ class TestProcess(unittest.TestCase):
                 self.bad_job_message))
 
     def test_resize_bands_creates_files(self):
-        delete_me, file_name, rename_me = (
+        delete_me, rename_me = (
             render_little.resize_bands(self.test_bands, self.test_input_path,
                                        self.test_scene_id)
         )
