@@ -24,6 +24,8 @@ before_install:
   - sudo apt-get install python-dateutil
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
+  - psql -c 'create database test_bar;' -U postgres
+
 
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib gdal scikit-image requests six nose dateutil
