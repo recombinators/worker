@@ -222,7 +222,7 @@ class UserJob_Model(Base):
                 'subject': 'Snapsat has rendered your request',
                 'text': ("Thank you for using Snapsat.\nYour full composite is"
                          " available here:\n{}\nScene data can be found here:"
-                         "\n{}\n-Snapsat").format(full_render, scene_url)
+                         "\n{}\n\n-Snapsat.org").format(full_render, scene_url)
             })
 
     @classmethod
