@@ -92,6 +92,13 @@ class TestProcess(unittest.TestCase):
                         u'scene_id': u'LC80470272015005LGN00',
                         u'email': u'test@test.com'}
 
+    # bad_job_message is missing band_1
+    bad_job_message = {u'job_id': u'1',
+                       u'band_2': u'3',
+                       u'band_3': u'2',
+                       u'scene_id': u'LC80470272015005LGN00',
+                       u'email': u'test@test.com'}
+
     test_input_path = os.getcwd() + '/download/LC80470272015005LGN00'
     test_bands = [u'4', u'3', u'2']
     test_scene_id = 'LC80470272015005LGN00'
@@ -109,6 +116,12 @@ class TestProcess(unittest.TestCase):
                          os.getcwd() + '/download/LC80470272015005LGN00')
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
+
+    @mock.patch('worker.render_little.Downloader')
+    def test_download_errors_correctly(self, Downloader):
+        with pytest.raises(Exception):
+            bands, input_path, scene_id = (render_little.download_and_set(
+                self.bad_job_message))
 
     @mock.patch('worker.render_little.Key')
     @mock.patch('worker.render_little.boto')
@@ -141,4 +154,3 @@ def test_cleanup_downloads():
     f.close()
 
     assert render_little.cleanup_downloads(test_dir) == True
-
