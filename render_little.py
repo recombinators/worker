@@ -15,11 +15,10 @@ from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle)
 
 
-
 os.getcwd()
-path_download = os.getcwd() + '/download'
-path_error_log = os.getcwd() + '/logs' + '/error_log.txt'
-path_activity_log = os.getcwd() + '/logs' + '/activity_log.txt'
+PATH_DOWNLOAD = os.getcwd() + '/download'
+PATH_ERROR_LOG = os.getcwd() + '/logs' + '/error_log.txt'
+PATH_ACTIVITY_LOG = os.getcwd() + '/logs' + '/activity_log.txt'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
@@ -54,7 +53,7 @@ def write_activity(message):
     """
     Write to activity log.
     """
-    fo = open(path_activity_log, 'a')
+    fo = open(PATH_ACTIVITY_LOG, 'a')
     fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
     fo.close()
 
@@ -63,7 +62,7 @@ def write_error(message):
     """
     Write to error log.
     """
-    fo = open(path_error_log, 'a')
+    fo = open(PATH_ERROR_LOG, 'a')
     fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
     fo.close()
 
@@ -124,14 +123,16 @@ def checking_for_jobs():
                                .format(sys.exc_info()))
                 write_error('Job process traceback: {}'.format(sys.exc_info()))
 
-                cleanup_status = cleanup_downloads(path_download)
+                cleanup_status = cleanup_downloads(PATH_DOWNLOAD)
                 write_activity('Cleanup downloads success = {}'
                                .format(cleanup_status))
                 write_error('Cleanup downloads success = {}'
                             .format(cleanup_status))
 
+# begin process() breakdown here:
 
-def process(job):
+
+def download_and_set(job):
     """
     Given bands and sceneID, download, image process, zip & upload to S3.
     """
@@ -139,21 +140,23 @@ def process(job):
     UserJob_Model.set_worker_instance_id(job['job_id'], INSTANCE_ID)
 
     scene_id = str(job['scene_id'])
-    input_path = os.path.join(path_download, scene_id)
-
-    # Create a subdirectory
+    input_path = os.path.join(PATH_DOWNLOAD, scene_id)
+        # Create a subdirectory
     if not os.path.exists(input_path):
         os.makedirs(input_path)
         print 'Directory created.'
 
     try:
-        b = Downloader(verbose=False, download_dir=path_download)
+        b = Downloader(verbose=False, download_dir=PATH_DOWNLOAD)
         bands = [job['band_1'], job['band_2'], job['band_3']]
         b.download([scene_id], bands)
         print 'Finished downloading.'
     except:
         raise Exception('Download failed')
+    return bands, input_path, scene_id
 
+
+def resize_bands(bands, input_path, scene_id):
     delete_me, rename_me = [], []
     # Resize each band
     for band in bands:
@@ -167,35 +170,43 @@ def process(job):
         if not os.path.exists(file_name2):
             raise Exception('gdal_translate did not downsize images')
     print 'Finished resizing three images.'
+    return delete_me, file_name, rename_me
 
-    # remove original band files and rename downsized to correct name
+
+def remove_and_rename(delete_me, rename_me):
     for i, o in zip(rename_me, delete_me):
         os.remove(o)
         os.rename(i, o)
 
-    # call landsat-util to merge images
+
+def merge_images(input_path, bands):
     try:
-        processor = Process(input_path, bands=bands, dst_path=path_download,
-                            verbose=True)
+        processor = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD,
+                            verbose=False)
         processor.run(pansharpen=False)
     except:
         raise Exception('Processing/landsat-util failed')
 
+
+def name_files(bands, file_name, input_path, scene_id):
     band_output = ''
     for i in bands:
         band_output = '{}{}'.format(band_output, i)
     file_name = '{}_bands_{}'.format(scene_id, band_output)
     file_tif = '{}.TIF'.format(os.path.join(input_path, file_name))
     file_location = '{}png'.format(file_tif[:-3])
+    return file_location, file_name, file_tif
 
-    # convert from TIF to png
+
+def tif_to_png(file_location, file_name, file_tif):
     subprocess.call(['convert', file_tif, file_location])
     file_png = 'pre_{}.png'.format(file_name)
+    return file_png
 
-    # upload to s3
+
+def upload_to_s3(file_location, file_png, job):
     try:
         print 'Uploading to S3'
-        address = 'http://'
         conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
                                 aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         b = conne.get_bucket('snapsatpreviews')
@@ -211,6 +222,33 @@ def process(job):
         UserJob_Model.set_job_status(job['job_id'], 5, out)
     except:
         raise Exception('S3 Upload failed')
+
+
+def process(job):
+    """Given bands and sceneID, download, image process, zip & upload to S3."""
+    # download and set vars
+    bands, input_path, scene_id = download_and_set(job)
+
+    # resize bands
+    delete_me, file_name, rename_me = resize_bands(bands, input_path, scene_id)
+
+    # remove original band files and rename downsized to correct name
+    remove_and_rename(delete_me, rename_me)
+
+    # call landsat-util to merge images
+    merge_images(input_path, bands)
+
+    # construct the file names
+    file_location, file_name, file_tif = name_files(bands,
+                                                    file_name,
+                                                    input_path,
+                                                    scene_id)
+
+    # convert from TIF to png
+    file_png = tif_to_png(file_location, file_name, file_tif)
+
+    # upload to s3
+    upload_to_s3(file_location, file_png, job)
 
     # delete files
     try:

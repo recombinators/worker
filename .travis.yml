@@ -6,6 +6,7 @@ virtualenv:
 notifications:
   slack:
     secure: iqdNG6wdkp86zQ2dSY3OMW3VwvPlBwtcbeaZmcy12XXqxxYgfATHEK9sEW20zxU4iZCSoprycN8qFjtna7yjnCUkx6Vd1kGw9N8PvEfpuwwGhORcF1VE5YKC34fP+F7AUuNXMkPNe/R2RAtN2qtM6q1dnuYTQZIR8G+xd37qOP8=
+
 before_install:
   - sudo apt-get update -qq
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
@@ -23,10 +24,23 @@ before_install:
   - sudo apt-get install python-dateutil
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
+  - psql -c 'create database test_bar;' -U postgres
+
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib gdal scikit-image requests six nose dateutil
-  - pip install --install-option="--no-cython-compile" cython
+  - conda config --add channels https://conda.binstar.org/rsignell
+  - conda install --yes -c https://conda.binstar.org/ioos-rhel6 rasterio
   - export PATH=$PATH:$PWD/landsat-util/landsat/
   - pip install -r requirements.txt
+  - pip install -r requirements_travis.txt
+
+env:
+  global:
+  - MAILGUN_KEY="test"
+  - MAILGUN_URL="test"
+  - secure: kaDDArGXYDFU0eEZjI7psXgJ11aIYkzVlLEDTRoRYNm4FKH77/42Jk2fYhQXRVnfEIDsUc77oLNtukwk5mpV0kYRMGPxxWDZ0l1TPNXjkRpzTKje2D6RlYdKyDLUqIHW1drDpHL/eGYweuzji4QMJK1iXoW8MElRuvXTTMqvVWQ=
+  - secure: G0qzGk7nwIRYns+9O351tcLsgYEzwjPYIB2KYk6G0bPvAMC9AfuP5MTsaNK6kYymyMCIG5UxZNSmMlFZoF12dav1AssPEKLPdAkyJkY8DsSmkONBf6p7S8kxLKHE1JJra/mc2jmxz1+BOczUvQ++gNCN7MN29h7Ga6+86B7/1D8=
+
 script:
-  - py.test -s -v test_render_1.py
+  - py.test test_render_1.py test_render_little.py
+  - py.test landsat-util/

@@ -1,3 +1,5 @@
+import sys
+sys.path.append('landsat-util/landsat')
 from landsat.downloader import Downloader
 from image import Process
 from boto.s3.key import Key
@@ -11,8 +13,6 @@ from sqs import (make_SQS_connection, get_queue, get_message,
 import os
 import boto
 import zipfile
-import sys
-sys.path.append('landsat-util/landsat')
 
 os.getcwd()
 PATH_DOWNLOAD = os.getcwd() + '/download'
@@ -147,7 +147,7 @@ def process_image(job, input_path, bands, PATH_DOWNLOAD, scene_id):
     Process images using landsat-util.
     """
     UserJob_Model.set_job_status(job['job_id'], 2)
-    c = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD, verbose=True)
+    c = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD, verbose=False)
     c.run(pansharpen=False)
     band_output = ''
     for band in bands:
