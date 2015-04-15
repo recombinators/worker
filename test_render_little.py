@@ -101,7 +101,7 @@ class TestProcess(unittest.TestCase):
     test_file_name_zip = 'LC80470272015005LGN00_bands_432.zip'
     test_file_png = 'pre_LC80470272015005LGN00_bands_432.png'
 
-    @mock.patch('recombinators_landsat.landsat_worker.render_little.Downloader')
+    @mock.patch('worker.render_little.Downloader')
     def test_download_returns_correct_values(self, Downloader):
         bands, input_path, scene_id = (render_little.download_and_set(
             self.fake_job_message))
@@ -110,16 +110,16 @@ class TestProcess(unittest.TestCase):
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
-    @mock.patch('recombinators_landsat.landsat_worker.render_little.Key')
-    @mock.patch('recombinators_landsat.landsat_worker.render_little.boto')
+    @mock.patch('worker.render_little.Key')
+    @mock.patch('worker.render_little.boto')
     def test_upload_to_s3(self, boto, Key):
         self.assertIsNone(render_little.upload_to_s3(self.test_file_location,
                                                      self.test_file_png,
                                                      self.fake_job_message
                                                      ))
 
-    @mock.patch('recombinators_landsat.landsat_worker.render_little.Key')
-    @mock.patch('recombinators_landsat.landsat_worker.render_little.boto')
+    @mock.patch('worker.render_little.Key')
+    @mock.patch('worker.render_little.boto')
     def test_upload_to_s3_fails_with_exception(self, boto, Key):
         # missing job argument to cause exception
         with self.assertRaises(Exception):
