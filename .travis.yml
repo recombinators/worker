@@ -32,6 +32,7 @@ install:
   - conda install --yes -c https://conda.binstar.org/ioos-rhel6 rasterio
   - export PATH=$PATH:$PWD/landsat-util/landsat/
   - pip install -r requirements.txt
+  - pip install -r requirements_travis.txt
 
 env:
   global:
