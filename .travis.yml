@@ -40,4 +40,4 @@ env:
   - secure: G0qzGk7nwIRYns+9O351tcLsgYEzwjPYIB2KYk6G0bPvAMC9AfuP5MTsaNK6kYymyMCIG5UxZNSmMlFZoF12dav1AssPEKLPdAkyJkY8DsSmkONBf6p7S8kxLKHE1JJra/mc2jmxz1+BOczUvQ++gNCN7MN29h7Ga6+86B7/1D8=
 
 script:
-  - py.test landsat-util/
+  - PYTHONPATH=. py.test
