@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../landsat-util/landsat')
+sys.path.append('./landsat-util/landsat')
 import pytest
 import render_1
 import models
