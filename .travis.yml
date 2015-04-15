@@ -7,6 +7,8 @@ notifications:
   slack:
     secure: iqdNG6wdkp86zQ2dSY3OMW3VwvPlBwtcbeaZmcy12XXqxxYgfATHEK9sEW20zxU4iZCSoprycN8qFjtna7yjnCUkx6Vd1kGw9N8PvEfpuwwGhORcF1VE5YKC34fP+F7AUuNXMkPNe/R2RAtN2qtM6q1dnuYTQZIR8G+xd37qOP8=
 before_install:
+  - export MAILGUN_KEY="test"
+  - export MAILGUN_URL="test"
   - sudo apt-get update -qq
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
@@ -25,6 +27,8 @@ before_install:
   - sudo ln -s /run/shm /dev/shm
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib gdal scikit-image requests six nose dateutil
+  - conda config --add channels https://conda.binstar.org/rsignell
+  - conda install --yes -c https://conda.binstar.org/ioos-rhel6 rasterio
   - pip install --install-option="--no-cython-compile" cython
   - export PATH=$PATH:$PWD/landsat-util/landsat/
   - pwd
@@ -33,7 +37,5 @@ install:
   - pip install -e .
   - cd ..
   - pip install -r requirements.txt
-  - pip install -r https://raw.githubusercontent.com/mapbox/rasterio/master/requirements.txt
-  - pip install rasterio
 script:
   - py.test -s -v
