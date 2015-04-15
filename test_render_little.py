@@ -123,6 +123,17 @@ class TestProcess(unittest.TestCase):
             bands, input_path, scene_id = (render_little.download_and_set(
                 self.bad_job_message))
 
+    def test_resize_bands_creates_files(self):
+        delete_me, file_name, rename_me = (
+            render_little.resize_bands(self.test_bands, self.test_input_path,
+                                       self.test_scene_id)
+        )
+        expected_delete_me = (
+            [os.getcwd() + '/download/LC80470272015005LGN00/LC80470272015005LGN00_B4.TIF',
+             os.getcwd() + '/download/LC80470272015005LGN00/LC80470272015005LGN00_B3.TIF',
+             os.getcwd() + '/download/LC80470272015005LGN00/LC80470272015005LGN00_B2.TIF'])
+        self.assertEqual(delete_me, expected_delete_me)
+
     @mock.patch('worker.render_little.Key')
     @mock.patch('worker.render_little.boto')
     def test_upload_to_s3(self, boto, Key):
