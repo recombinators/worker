@@ -139,13 +139,14 @@ class TestProcess(unittest.TestCase):
         self.assertEqual(delete_me, expected_delete_me)
 
     def test_resize_bands_fails_with_message(self):
-        with pytest.raises(Exception):
-            os.remove('*.re')
+        with pytest.raises(Exception) as e:
             delete_me, rename_me = (
                 render_little.resize_bands(self.bad_test_bands,
-                                           self.test_input_path,
+                                           '',
                                            self.test_scene_id)
             )
+        print(e.value)
+        assert 'gdal_translate did not downsize images' in str(e.value)
 
     @mock.patch('worker.render_little.Key')
     @mock.patch('worker.render_little.boto')
@@ -165,6 +166,23 @@ class TestProcess(unittest.TestCase):
                                        self.test_input_path,
                                        None
                                        )
+
+    @mock.patch('worker.render_little.Process')
+    def test_merge_images(self, Process):
+        render_little.merge_images(self.test_input_path, self.test_bands)
+        render_little.Process.assert_called_with(
+            self.test_input_path,
+            dst_path=render_little.PATH_DOWNLOAD,
+            verbose=False,
+            bands=self.test_bands
+        )
+
+    @mock.patch('worker.render_little.Process')
+    def test_merge_images_fails_with_exception(self, Process):
+        render_little.Process.side_effect = Exception()
+        with pytest.raises(Exception) as e:
+            render_little.merge_images('', self.bad_test_bands)
+        assert 'Processing/landsat-util failed' in str(e.value)
 
 
 def test_cleanup_downloads():
