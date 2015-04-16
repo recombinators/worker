@@ -99,8 +99,9 @@ class TestProcess(unittest.TestCase):
                        u'scene_id': u'LC80470272015005LGN00',
                        u'email': u'test@test.com'}
 
-    test_input_path = os.getcwd() + '/download/LC80470272015005LGN00'
+    test_input_path = os.getcwd() + '/test_download/LC80470272015005LGN00'
     test_bands = [u'4', u'3', u'2']
+    bad_test_bands = [u'4', u'3']
     test_scene_id = 'LC80470272015005LGN00'
     test_band_output = '432'
     test_file_location = (os.getcwd() +
@@ -124,15 +125,27 @@ class TestProcess(unittest.TestCase):
                 self.bad_job_message))
 
     def test_resize_bands_creates_files(self):
+        if not os.path.exists(self.test_input_path):
+            os.makedirs(self.test_input_path)
         delete_me, rename_me = (
             render_little.resize_bands(self.test_bands, self.test_input_path,
                                        self.test_scene_id)
-        )
+            )
         expected_delete_me = (
-            [os.getcwd() + '/download/LC80470272015005LGN00/LC80470272015005LGN00_B4.TIF',
-             os.getcwd() + '/download/LC80470272015005LGN00/LC80470272015005LGN00_B3.TIF',
-             os.getcwd() + '/download/LC80470272015005LGN00/LC80470272015005LGN00_B2.TIF'])
+            [self.test_input_path + '/LC80470272015005LGN00_B4.TIF',
+             self.test_input_path + '/LC80470272015005LGN00_B3.TIF',
+             self.test_input_path + '/LC80470272015005LGN00_B2.TIF']
+            )
         self.assertEqual(delete_me, expected_delete_me)
+
+    def test_resize_bands_fails_with_message(self):
+        with pytest.raises(Exception):
+            os.remove('*.re')
+            delete_me, rename_me = (
+                render_little.resize_bands(self.bad_test_bands,
+                                           self.test_input_path,
+                                           self.test_scene_id)
+            )
 
     @mock.patch('worker.render_little.Key')
     @mock.patch('worker.render_little.boto')
