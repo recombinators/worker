@@ -33,8 +33,8 @@ except:
 
 
 def cleanup_downloads(folder_path):
-    """
-    Clean up download folder if process fails.
+    """Clean up download folder if process fails.
+
     Return True if download folder empty.
     """
     for file_object in os.listdir(folder_path):
@@ -50,18 +50,14 @@ def cleanup_downloads(folder_path):
 
 
 def write_activity(message):
-    """
-    Write to activity log.
-    """
+    """Write to activity log."""
     fo = open(PATH_ACTIVITY_LOG, 'a')
     fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
     fo.close()
 
 
 def write_error(message):
-    """
-    Write to error log.
-    """
+    """Write to error log."""
     fo = open(PATH_ERROR_LOG, 'a')
     fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
     fo.close()
@@ -72,9 +68,7 @@ def main():
 
 
 def checking_for_jobs():
-    """
-    Poll jobs queue for jobs.
-    """
+    """Poll jobs queue for jobs."""
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
                                   AWS_SECRET_ACCESS_KEY)
     write_activity(SQSconn)
