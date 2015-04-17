@@ -64,7 +64,7 @@ def fake_job1(db_session):
     db_session.flush()
 
 
-# --- test db functionality tests
+# --test db functionality tests
 def test_db_lookup(db_session):
     model_instance = models.UserJob_Model(jobstatus=0,
                                           starttime=datetime.utcnow(),
@@ -112,6 +112,8 @@ def test_write_error(monkeypatch, tmpdir):
     render_little.write_error('test message')
     assert 'test message' in tmp_error_log.read()
 
+
+# --jobs queue
 
 # --process tests
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
