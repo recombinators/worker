@@ -103,6 +103,16 @@ def test_write_activity(monkeypatch, tmpdir):
     assert 'test message' in tmp_activity_log.read()
 
 
+def test_write_error(monkeypatch, tmpdir):
+    tmp_error_log = tmpdir.mkdir('log').join('tmp_error_log.txt')
+    monkeypatch.setattr(render_little,
+                        'PATH_ERROR_LOG',
+                        str(tmp_error_log)
+                        )
+    render_little.write_error('test message')
+    assert 'test message' in tmp_error_log.read()
+
+
 # --process tests
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
 class TestProcess(unittest.TestCase):
