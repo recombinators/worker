@@ -119,9 +119,8 @@ def checking_for_jobs():
                 write_error('Cleanup downloads success = {}'
                             .format(cleanup_status))
 
+
 # begin process() breakdown here:
-
-
 def download_and_set(job):
     """Download 3 band files for the given sceneid"""
     # set worker instance id for job
