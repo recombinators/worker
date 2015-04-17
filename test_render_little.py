@@ -79,7 +79,7 @@ def test_db_is_rolled_back(db_session):
     assert 0 == db_session.query(models.UserJob_Model).count()
 
 
-# --- module function tests
+# --module function tests
 def test_cleanup_downloads():
     test_dir = os.getcwd() + '/testdir'
 
@@ -95,12 +95,15 @@ def test_cleanup_downloads():
 
 def test_write_activity(monkeypatch, tmpdir):
     tmp_activity_log = tmpdir.mkdir('log').join('tmp_act_log.txt')
-    monkeypatch.setattr(render_little, 'PATH_ACTIVITY_LOG', str(tmp_activity_log))
+    monkeypatch.setattr(render_little,
+                        'PATH_ACTIVITY_LOG',
+                        str(tmp_activity_log)
+                        )
     render_little.write_activity('test message')
     assert 'test message' in tmp_activity_log.read()
 
 
-# --- process tests
+# --process tests
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
 class TestProcess(unittest.TestCase):
 
