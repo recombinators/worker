@@ -106,8 +106,10 @@ class TestProcess(unittest.TestCase):
     test_band_output = '432'
     test_file_location = (os.getcwd() +
         '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.TIF')
+    test_file_name = 'LC80470272015005LGN00_bands_432'
     test_file_name_zip = 'LC80470272015005LGN00_bands_432.zip'
     test_file_png = 'pre_LC80470272015005LGN00_bands_432.png'
+    test_file_tif = 'pre_LC80470272015005LGN00_bands_432.TIF'
 
     @mock.patch('worker.render_little.Downloader')
     def test_download_returns_correct_values(self, Downloader):
@@ -200,6 +202,16 @@ class TestProcess(unittest.TestCase):
         assert file_name == 'LC80470272015005LGN00_bands_432'
         assert file_tif == (
             self.test_input_path + '/LC80470272015005LGN00_bands_432.TIF')
+
+    @mock.patch('worker.render_little.subprocess')
+    def test_tif_to_png(self, mock_subp):
+        file_png = render_little.tif_to_png(self.test_file_location,
+                                            self.test_file_name,
+                                            self.test_file_tif)
+        assert file_png == self.test_file_png
+        mock_subp.call.assert_called_with(['convert',
+                                           self.test_file_tif,
+                                           self.test_file_location])
 
 
 def test_cleanup_downloads():
