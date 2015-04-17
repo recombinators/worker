@@ -103,7 +103,6 @@ class TestProcess(unittest.TestCase):
     test_bands = [u'4', u'3', u'2']
     bad_test_bands = [u'4', u'3']
     test_scene_id = 'LC80470272015005LGN00'
-    test_band_output = '432'
     test_file_location = (os.getcwd() +
         '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.TIF')
     test_file_name = 'LC80470272015005LGN00_bands_432'
