@@ -65,6 +65,7 @@ def write_error(message):
 
 # Begin checking for jobs
 def get_job_attributes(job_message):
+    """Get job attributes, log the result."""
     try:
         job_attributes = get_attributes(job_message[0])
         write_activity(job_attributes)
@@ -81,6 +82,7 @@ def get_job_attributes(job_message):
 
 
 def delete_job_from_queue(SQSconn, job_message, jobs_queue):
+    """Remove the job from the job queue."""
     try:
         del_status = delete_message_from_handle(SQSconn,
                                                 jobs_queue,
@@ -106,7 +108,6 @@ def checking_for_jobs():
         job_message = get_message(jobs_queue)
         if job_message:
             job_attributes = get_job_attributes(job_message)
-
             delete_job_from_queue(SQSconn, job_message, jobs_queue)
 
             # Process full res images
