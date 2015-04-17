@@ -64,8 +64,6 @@ def fake_job1(db_session):
     db_session.flush()
 
 # --- test db functionality tests
-
-
 def test_db_lookup(db_session):
     model_instance = models.UserJob_Model(jobstatus=0,
                                           starttime=datetime.utcnow(),
@@ -80,8 +78,21 @@ def test_db_is_rolled_back(db_session):
     assert 0 == db_session.query(models.UserJob_Model).count()
 
 
-# --- process tests
+# --- module function tests
+def test_cleanup_downloads():
+    test_dir = os.getcwd() + '/testdir'
 
+    if not os.path.exists(test_dir):
+        os.makedirs(test_dir)
+
+    f = open(test_dir + '/test.txt', 'a')
+    f.write('this is a test')
+    f.close()
+
+    assert render_little.cleanup_downloads(test_dir) == True
+
+
+# --- process tests
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
 class TestProcess(unittest.TestCase):
 
@@ -223,14 +234,3 @@ class TestProcess(unittest.TestCase):
             render_little.delete_files('files')
 
 
-def test_cleanup_downloads():
-    test_dir = os.getcwd() + '/testdir'
-
-    if not os.path.exists(test_dir):
-        os.makedirs(test_dir)
-
-    f = open(test_dir + '/test.txt', 'a')
-    f.write('this is a test')
-    f.close()
-
-    assert render_little.cleanup_downloads(test_dir) == True
