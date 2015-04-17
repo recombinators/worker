@@ -63,10 +63,6 @@ def write_error(message):
     fo.close()
 
 
-def main():
-    checking_for_jobs()
-
-
 def checking_for_jobs():
     """Poll jobs queue for jobs."""
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
@@ -261,4 +257,4 @@ def process(job):
     return True
 
 if __name__ == '__main__':
-    main()
+    checking_for_jobs()
