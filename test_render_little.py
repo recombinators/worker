@@ -92,14 +92,24 @@ class TestProcess(unittest.TestCase):
                         u'scene_id': u'LC80470272015005LGN00',
                         u'email': u'test@test.com'}
 
-    test_input_path = os.getcwd() + '/download/LC80470272015005LGN00'
+    # bad_job_message is missing band_1
+    bad_job_message = {u'job_id': u'1',
+                       u'band_2': u'3',
+                       u'band_3': u'2',
+                       u'scene_id': u'LC80470272015005LGN00',
+                       u'email': u'test@test.com'}
+
+    test_input_path = os.getcwd() + '/test_download/LC80470272015005LGN00'
     test_bands = [u'4', u'3', u'2']
+    bad_test_bands = [u'4', u'3']
     test_scene_id = 'LC80470272015005LGN00'
     test_band_output = '432'
     test_file_location = (os.getcwd() +
         '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.TIF')
+    test_file_name = 'LC80470272015005LGN00_bands_432'
     test_file_name_zip = 'LC80470272015005LGN00_bands_432.zip'
     test_file_png = 'pre_LC80470272015005LGN00_bands_432.png'
+    test_file_tif = 'pre_LC80470272015005LGN00_bands_432.TIF'
 
     @mock.patch('worker.render_little.Downloader')
     def test_download_returns_correct_values(self, Downloader):
@@ -109,6 +119,36 @@ class TestProcess(unittest.TestCase):
                          os.getcwd() + '/download/LC80470272015005LGN00')
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
+
+    @mock.patch('worker.render_little.Downloader')
+    def test_download_errors_correctly(self, Downloader):
+        with pytest.raises(Exception):
+            bands, input_path, scene_id = (render_little.download_and_set(
+                self.bad_job_message))
+
+    def test_resize_bands_creates_files(self):
+        if not os.path.exists(self.test_input_path):
+            os.makedirs(self.test_input_path)
+        delete_me, rename_me = (
+            render_little.resize_bands(self.test_bands, self.test_input_path,
+                                       self.test_scene_id)
+            )
+        expected_delete_me = (
+            [self.test_input_path + '/LC80470272015005LGN00_B4.TIF',
+             self.test_input_path + '/LC80470272015005LGN00_B3.TIF',
+             self.test_input_path + '/LC80470272015005LGN00_B2.TIF']
+            )
+        self.assertEqual(delete_me, expected_delete_me)
+
+    def test_resize_bands_fails_with_message(self):
+        with pytest.raises(Exception) as e:
+            delete_me, rename_me = (
+                render_little.resize_bands(self.bad_test_bands,
+                                           '',
+                                           self.test_scene_id)
+            )
+        print(e.value)
+        assert 'gdal_translate did not downsize images' in str(e.value)
 
     @mock.patch('worker.render_little.Key')
     @mock.patch('worker.render_little.boto')
@@ -122,12 +162,57 @@ class TestProcess(unittest.TestCase):
     @mock.patch('worker.render_little.boto')
     def test_upload_to_s3_fails_with_exception(self, boto, Key):
         # missing job argument to cause exception
-        with self.assertRaises(Exception):
-            render_little.upload_to_s3(self.test_file_location,
-                                       self.test_file_name_zip,
-                                       self.test_input_path,
-                                       None
+        render_little.boto.connect_s3.side_effect = Exception()
+        with pytest.raises(Exception) as e:
+            render_little.upload_to_s3(None,
+                                       '',
+                                       self.bad_job_message,
                                        )
+        assert 'S3 Upload failed' in str(e.value)
+
+    @mock.patch('worker.render_little.Process')
+    def test_merge_images(self, Process):
+        render_little.merge_images(self.test_input_path, self.test_bands)
+        render_little.Process.assert_called_with(
+            self.test_input_path,
+            dst_path=render_little.PATH_DOWNLOAD,
+            verbose=False,
+            bands=self.test_bands
+        )
+
+    @mock.patch('worker.render_little.Process')
+    def test_merge_images_fails_with_exception(self, Process):
+        render_little.Process.side_effect = Exception()
+        with pytest.raises(Exception) as e:
+            render_little.merge_images('', self.bad_test_bands)
+        assert 'Processing/landsat-util failed' in str(e.value)
+
+    @mock.patch('worker.render_little.os')
+    def test_remove_and_rename(self, mock_os):
+        render_little.remove_and_rename(['filelist1'], ['filelist2'])
+        mock_os.remove.assert_called_with('filelist1')
+        mock_os.rename.assert_called_with('filelist2', 'filelist1')
+
+    def test_name_files(self):
+        file_location, file_name, file_tif = (
+            render_little.name_files(self.test_bands,
+                                     self.test_input_path,
+                                     self.test_scene_id))
+        assert file_location == (
+            self.test_input_path + '/LC80470272015005LGN00_bands_432.png')
+        assert file_name == 'LC80470272015005LGN00_bands_432'
+        assert file_tif == (
+            self.test_input_path + '/LC80470272015005LGN00_bands_432.TIF')
+
+    @mock.patch('worker.render_little.subprocess')
+    def test_tif_to_png(self, mock_subp):
+        file_png = render_little.tif_to_png(self.test_file_location,
+                                            self.test_file_name,
+                                            self.test_file_tif)
+        assert file_png == self.test_file_png
+        mock_subp.call.assert_called_with(['convert',
+                                           self.test_file_tif,
+                                           self.test_file_location])
 
 
 def test_cleanup_downloads():
@@ -141,4 +226,3 @@ def test_cleanup_downloads():
     f.close()
 
     assert render_little.cleanup_downloads(test_dir) == True
-
