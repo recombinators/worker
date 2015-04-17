@@ -63,6 +63,7 @@ def fake_job1(db_session):
     db_session.add(model_instance)
     db_session.flush()
 
+
 # --- test db functionality tests
 def test_db_lookup(db_session):
     model_instance = models.UserJob_Model(jobstatus=0,
@@ -149,12 +150,12 @@ class TestProcess(unittest.TestCase):
         delete_me, rename_me = (
             render_little.resize_bands(self.test_bands, self.test_input_path,
                                        self.test_scene_id)
-            )
+        )
         expected_delete_me = (
             [self.test_input_path + '/LC80470272015005LGN00_B4.TIF',
              self.test_input_path + '/LC80470272015005LGN00_B3.TIF',
              self.test_input_path + '/LC80470272015005LGN00_B2.TIF']
-            )
+        )
         self.assertEqual(delete_me, expected_delete_me)
 
     def test_resize_bands_fails_with_message(self):
@@ -239,5 +240,3 @@ class TestProcess(unittest.TestCase):
         render_little.rmtree.side_effect = Exception(OSError)
         with pytest.raises(Exception):
             render_little.delete_files('files')
-
-
