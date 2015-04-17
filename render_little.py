@@ -97,6 +97,28 @@ def delete_job_from_queue(SQSconn, job_message, jobs_queue):
         write_error('Delete traceback: {}'.format(sys.exc_info()))
 
 
+def process_image(job_attributes):
+    """Begin the image processing and log the results."""
+    try:
+        proc_status = process(job_attributes)
+        write_activity('Job Process success = {}'.format(proc_status))
+    except Exception as e:
+        # If processing fails, send message to pyramid to update db
+        write_activity('Job process success = {}'.format(False))
+        write_activity('Job process fail because {}'
+                       .format(e.message))
+        write_error('Job process fail because {}'.format(e.message))
+        write_activity('Job proceess traceback: {}'
+                       .format(sys.exc_info()))
+        write_error('Job process traceback: {}'.format(sys.exc_info()))
+
+        cleanup_status = cleanup_downloads(PATH_DOWNLOAD)
+        write_activity('Cleanup downloads success = {}'
+                       .format(cleanup_status))
+        write_error('Cleanup downloads success = {}'
+                    .format(cleanup_status))
+
+
 def checking_for_jobs():
     """Poll jobs queue for jobs."""
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
@@ -111,24 +133,7 @@ def checking_for_jobs():
             delete_job_from_queue(SQSconn, job_message, jobs_queue)
 
             # Process full res images
-            try:
-                proc_status = process(job_attributes)
-                write_activity('Job Process success = {}'.format(proc_status))
-            except Exception as e:
-                # If processing fails, send message to pyramid to update db
-                write_activity('Job process success = {}'.format(False))
-                write_activity('Job process fail because {}'
-                               .format(e.message))
-                write_error('Job process fail because {}'.format(e.message))
-                write_activity('Job proceess traceback: {}'
-                               .format(sys.exc_info()))
-                write_error('Job process traceback: {}'.format(sys.exc_info()))
-
-                cleanup_status = cleanup_downloads(PATH_DOWNLOAD)
-                write_activity('Cleanup downloads success = {}'
-                               .format(cleanup_status))
-                write_error('Cleanup downloads success = {}'
-                            .format(cleanup_status))
+            process_image(job_attributes)
 
 
 # begin process() breakdown here:
