@@ -149,25 +149,11 @@ class TestProcess(unittest.TestCase):
         print(e.value)
         assert 'gdal_translate did not downsize images' in str(e.value)
 
-    @mock.patch('worker.render_little.Key')
-    @mock.patch('worker.render_little.boto')
-    def test_upload_to_s3(self, boto, Key):
-        self.assertIsNone(render_little.upload_to_s3(self.test_file_location,
-                                                     self.test_file_png,
-                                                     self.fake_job_message
-                                                     ))
-
-    @mock.patch('worker.render_little.Key')
-    @mock.patch('worker.render_little.boto')
-    def test_upload_to_s3_fails_with_exception(self, boto, Key):
-        # missing job argument to cause exception
-        render_little.boto.connect_s3.side_effect = Exception()
-        with pytest.raises(Exception) as e:
-            render_little.upload_to_s3(None,
-                                       '',
-                                       self.bad_job_message,
-                                       )
-        assert 'S3 Upload failed' in str(e.value)
+    @mock.patch('worker.render_little.os')
+    def test_remove_and_rename(self, mock_os):
+        render_little.remove_and_rename(['filelist1'], ['filelist2'])
+        mock_os.remove.assert_called_with('filelist1')
+        mock_os.rename.assert_called_with('filelist2', 'filelist1')
 
     @mock.patch('worker.render_little.Process')
     def test_merge_images(self, Process):
@@ -185,12 +171,6 @@ class TestProcess(unittest.TestCase):
         with pytest.raises(Exception) as e:
             render_little.merge_images('', self.bad_test_bands)
         assert 'Processing/landsat-util failed' in str(e.value)
-
-    @mock.patch('worker.render_little.os')
-    def test_remove_and_rename(self, mock_os):
-        render_little.remove_and_rename(['filelist1'], ['filelist2'])
-        mock_os.remove.assert_called_with('filelist1')
-        mock_os.rename.assert_called_with('filelist2', 'filelist1')
 
     def test_name_files(self):
         file_location, file_name, file_tif = (
@@ -212,6 +192,35 @@ class TestProcess(unittest.TestCase):
         mock_subp.call.assert_called_with(['convert',
                                            self.test_file_tif,
                                            self.test_file_location])
+
+    @mock.patch('worker.render_little.Key')
+    @mock.patch('worker.render_little.boto')
+    def test_upload_to_s3(self, boto, Key):
+        self.assertIsNone(render_little.upload_to_s3(self.test_file_location,
+                                                     self.test_file_png,
+                                                     self.fake_job_message
+                                                     ))
+
+    @mock.patch('worker.render_little.Key')
+    @mock.patch('worker.render_little.boto')
+    def test_upload_to_s3_fails_with_exception(self, boto, Key):
+        # missing job argument to cause exception
+        render_little.boto.connect_s3.side_effect = Exception()
+        with pytest.raises(Exception) as e:
+            render_little.upload_to_s3(None,
+                                       '',
+                                       self.bad_job_message,
+                                       )
+        assert 'S3 Upload failed' in str(e.value)
+
+    @mock.patch('worker.render_little.rmtree')
+    def test_delete_files(self, mock_rmtree):
+        render_little.delete_files(self.test_input_path)
+        mock_rmtree.assert_called_with(self.test_input_path)
+        # check error checking:
+        render_little.rmtree.side_effect = Exception(OSError)
+        with pytest.raises(Exception):
+            render_little.delete_files('files')
 
 
 def test_cleanup_downloads():

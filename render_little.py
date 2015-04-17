@@ -227,6 +227,15 @@ def upload_to_s3(file_location, file_png, job):
         raise Exception('S3 Upload failed')
 
 
+def delete_files(input_path):
+    """Remove leftover files when we are done with them."""
+    try:
+        rmtree(input_path)
+    except OSError:
+        print input_path
+        print 'error deleting files'
+
+
 def process(job):
     """Given bands and sceneID, download, image process, zip & upload to S3."""
     # download and set vars
@@ -253,11 +262,7 @@ def process(job):
     upload_to_s3(file_location, file_png, job)
 
     # delete files
-    try:
-        rmtree(input_path)           # band images and composite
-    except OSError:
-        print input_path
-        print 'error deleting files'
+    delete_files(input_path)
 
     return True
 
