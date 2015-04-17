@@ -184,6 +184,12 @@ class TestProcess(unittest.TestCase):
             render_little.merge_images('', self.bad_test_bands)
         assert 'Processing/landsat-util failed' in str(e.value)
 
+    @mock.patch('worker.render_little.os')
+    def test_remove_and_rename(self, mock_os):
+        render_little.remove_and_rename(['filelist1'], ['filelist2'])
+        mock_os.remove.assert_called_with('filelist1')
+        mock_os.rename.assert_called_with('filelist2', 'filelist1')
+
 
 def test_cleanup_downloads():
     test_dir = os.getcwd() + '/testdir'
