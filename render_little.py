@@ -133,15 +133,13 @@ def checking_for_jobs():
 
 
 def download_and_set(job):
-    """
-    Given bands and sceneID, download, image process, zip & upload to S3.
-    """
+    """Download 3 band files for the given sceneid"""
     # set worker instance id for job
     UserJob_Model.set_worker_instance_id(job['job_id'], INSTANCE_ID)
 
     scene_id = str(job['scene_id'])
     input_path = os.path.join(PATH_DOWNLOAD, scene_id)
-        # Create a subdirectory
+    # Create a subdirectory
     if not os.path.exists(input_path):
         os.makedirs(input_path)
         print 'Directory created.'
@@ -157,6 +155,7 @@ def download_and_set(job):
 
 
 def resize_bands(bands, input_path, scene_id):
+    """gdal resizes each band file and returns filenames to delete and rename"""
     delete_me, rename_me = [], []
     # Resize each band
     for band in bands:
@@ -173,12 +172,14 @@ def resize_bands(bands, input_path, scene_id):
 
 
 def remove_and_rename(delete_me, rename_me):
+    """delete and rename files"""
     for i, o in zip(rename_me, delete_me):
         os.remove(o)
         os.rename(i, o)
 
 
 def merge_images(input_path, bands):
+    """Combine the 3 bands into 1 color image"""
     try:
         processor = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD,
                             verbose=False)
@@ -188,6 +189,7 @@ def merge_images(input_path, bands):
 
 
 def name_files(bands, input_path, scene_id):
+    """Give filenames to files for each band """
     band_output = ''
     for i in bands:
         band_output = '{}{}'.format(band_output, i)
@@ -198,12 +200,14 @@ def name_files(bands, input_path, scene_id):
 
 
 def tif_to_png(file_location, file_name, file_tif):
+    """Convert a tif file to a png"""
     subprocess.call(['convert', file_tif, file_location])
     file_png = 'pre_{}.png'.format(file_name)
     return file_png
 
 
 def upload_to_s3(file_location, file_png, job):
+    """Upload the processed file to S3, update job database"""
     try:
         print 'Uploading to S3'
         conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
