@@ -80,6 +80,21 @@ def get_job_attributes(job_message):
     return job_attributes
 
 
+def delete_job_from_queue(SQSconn, job_message, jobs_queue):
+    try:
+        del_status = delete_message_from_handle(SQSconn,
+                                                jobs_queue,
+                                                job_message[0])
+        write_activity('Delete success = {}'.format(del_status))
+    except Exception as e:
+        write_activity('Delete success = {}'.format(del_status))
+        write_activity('Delete message fail because {}'
+                       .format(e.message))
+        write_error('Delete message fail because {}'.format(e.message))
+        write_activity('Delete traceback: {}'.format(sys.exc_info()))
+        write_error('Delete traceback: {}'.format(sys.exc_info()))
+
+
 def checking_for_jobs():
     """Poll jobs queue for jobs."""
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
@@ -92,18 +107,7 @@ def checking_for_jobs():
         if job_message:
             job_attributes = get_job_attributes(job_message)
 
-            try:
-                del_status = delete_message_from_handle(SQSconn,
-                                                        jobs_queue,
-                                                        job_message[0])
-                write_activity('Delete success = {}'.format(del_status))
-            except Exception as e:
-                write_activity('Delete success = {}'.format(del_status))
-                write_activity('Delete message fail because {}'
-                               .format(e.message))
-                write_error('Delete message fail because {}'.format(e.message))
-                write_activity('Delete traceback: {}'.format(sys.exc_info()))
-                write_error('Delete traceback: {}'.format(sys.exc_info()))
+            delete_job_from_queue(SQSconn, job_message, jobs_queue)
 
             # Process full res images
             try:
