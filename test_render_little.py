@@ -190,6 +190,17 @@ class TestProcess(unittest.TestCase):
         mock_os.remove.assert_called_with('filelist1')
         mock_os.rename.assert_called_with('filelist2', 'filelist1')
 
+    def test_name_files(self):
+        file_location, file_name, file_tif = (
+            render_little.name_files(self.test_bands,
+                                     self.test_input_path,
+                                     self.test_scene_id))
+        assert file_location == (
+            self.test_input_path + '/LC80470272015005LGN00_bands_432.png')
+        assert file_name == 'LC80470272015005LGN00_bands_432'
+        assert file_tif == (
+            self.test_input_path + '/LC80470272015005LGN00_bands_432.TIF')
+
 
 def test_cleanup_downloads():
     test_dir = os.getcwd() + '/testdir'
