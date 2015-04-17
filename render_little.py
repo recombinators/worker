@@ -160,7 +160,6 @@ def resize_bands(bands, input_path, scene_id):
     delete_me, rename_me = [], []
     # Resize each band
     for band in bands:
-        # file_name = '{}/B{}-geo.TIF'.format(direc_scene, b)
         file_name = '{}/{}_B{}.TIF'.format(input_path, scene_id, band)
         delete_me.append(file_name)
         file_name2 = '{}.re'.format(file_name)
@@ -170,7 +169,7 @@ def resize_bands(bands, input_path, scene_id):
         if not os.path.exists(file_name2):
             raise Exception('gdal_translate did not downsize images')
     print 'Finished resizing three images.'
-    return delete_me, file_name, rename_me
+    return delete_me, rename_me
 
 
 def remove_and_rename(delete_me, rename_me):
@@ -188,7 +187,7 @@ def merge_images(input_path, bands):
         raise Exception('Processing/landsat-util failed')
 
 
-def name_files(bands, file_name, input_path, scene_id):
+def name_files(bands, input_path, scene_id):
     band_output = ''
     for i in bands:
         band_output = '{}{}'.format(band_output, i)
@@ -230,7 +229,7 @@ def process(job):
     bands, input_path, scene_id = download_and_set(job)
 
     # resize bands
-    delete_me, file_name, rename_me = resize_bands(bands, input_path, scene_id)
+    delete_me, rename_me = resize_bands(bands, input_path, scene_id)
 
     # remove original band files and rename downsized to correct name
     remove_and_rename(delete_me, rename_me)
@@ -240,7 +239,6 @@ def process(job):
 
     # construct the file names
     file_location, file_name, file_tif = name_files(bands,
-                                                    file_name,
                                                     input_path,
                                                     scene_id)
 
