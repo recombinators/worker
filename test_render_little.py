@@ -162,12 +162,13 @@ class TestProcess(unittest.TestCase):
     @mock.patch('worker.render_little.boto')
     def test_upload_to_s3_fails_with_exception(self, boto, Key):
         # missing job argument to cause exception
-        with self.assertRaises(Exception):
-            render_little.upload_to_s3(self.test_file_location,
-                                       self.test_file_name_zip,
-                                       self.test_input_path,
-                                       None
+        render_little.boto.connect_s3.side_effect = Exception()
+        with pytest.raises(Exception) as e:
+            render_little.upload_to_s3(None,
+                                       '',
+                                       self.bad_job_message,
                                        )
+        assert 'S3 Upload failed' in str(e.value)
 
     @mock.patch('worker.render_little.Process')
     def test_merge_images(self, Process):
