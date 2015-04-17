@@ -63,6 +63,23 @@ def write_error(message):
     fo.close()
 
 
+# Begin checking for jobs
+def get_job_attributes(job_message):
+    try:
+        job_attributes = get_attributes(job_message[0])
+        write_activity(job_attributes)
+    except Exception as e:
+        write_activity('Attribute retrieval fail because {}'
+                       .format(e.message))
+        write_error('Attribute retrieval fail because {}'
+                    .format(e.message))
+        write_activity('Attribute retrieval traceback: {}'
+                       .format(sys.exc_info()))
+        write_error('Attribute retrieval traceback: {}'
+                    .format(sys.exc_info()))
+    return job_attributes
+
+
 def checking_for_jobs():
     """Poll jobs queue for jobs."""
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
@@ -73,18 +90,7 @@ def checking_for_jobs():
     while True:
         job_message = get_message(jobs_queue)
         if job_message:
-            try:
-                job_attributes = get_attributes(job_message[0])
-                write_activity(job_attributes)
-            except Exception as e:
-                write_activity('Attribute retrieval fail because {}'
-                               .format(e.message))
-                write_error('Attribute retrieval fail because {}'
-                            .format(e.message))
-                write_activity('Attribute retrieval traceback: {}'
-                               .format(sys.exc_info()))
-                write_error('Attribute retrieval traceback: {}'
-                            .format(sys.exc_info()))
+            job_attributes = get_job_attributes(job_message)
 
             try:
                 del_status = delete_message_from_handle(SQSconn,
