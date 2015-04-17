@@ -92,6 +92,13 @@ def test_cleanup_downloads():
     assert render_little.cleanup_downloads(test_dir) == True
 
 
+def test_write_activity(monkeypatch, tmpdir):
+    tmp_activity_log = tmpdir.mkdir('log').join('tmp_act_log.txt')
+    monkeypatch.setattr(render_little, 'PATH_ACTIVITY_LOG', str(tmp_activity_log))
+    render_little.write_activity('test message')
+    assert 'test message' in tmp_activity_log.read()
+
+
 # --- process tests
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
 class TestProcess(unittest.TestCase):
