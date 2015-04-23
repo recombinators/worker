@@ -10,7 +10,6 @@ import unittest
 import os
 import factory
 import factory.alchemy
-import zipfile
 
 
 @pytest.fixture(scope='session', autouse=True)
