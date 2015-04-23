@@ -167,8 +167,27 @@ class TestProcess(unittest.TestCase):
                 self.bad_job_message))
 
     def test_resize_bands_creates_files(self):
+        """If test files don't exist, make them exist
+
+        The files are either downloaded from a fileserver, or unzipped from an
+        archive file if it exists.
+        """
+        from zipfile import ZipFile
+        from shutil import rmtree
+        rmtree(TestProcess.test_tmp_download)
+
         if not os.path.exists(self.test_input_path):
             os.makedirs(self.test_input_path)
+        if not os.path.exists(self.test_input_path +
+                              '/LC80470272015005LGN00_B4.TIF'):
+            try:
+                with ZipFile('test_tiffs_Archive.zip', 'r') as zip_file:
+                    zip_file.extractall(self.test_input_path)
+            except IOError:
+                print("Archive does not exist - downloading files")
+                bands, input_path, scene_id = render_little.download_and_set(
+                    self.fake_job_message)
+
         delete_me, rename_me = (
             render_little.resize_bands(self.test_bands, self.test_input_path,
                                        self.test_scene_id)
