@@ -281,3 +281,29 @@ class TestProcess(unittest.TestCase):
         render_little.rmtree.side_effect = Exception(OSError)
         with pytest.raises(Exception):
             render_little.delete_files('files')
+
+
+@mock.patch('worker.render_little.Key')
+@mock.patch('worker.render_little.boto')
+def test_whole_process_run(Key, boto, monkeypatch):
+    from zipfile import ZipFile
+    from shutil import rmtree
+    rmtree(TestProcess.test_tmp_download)
+    if not os.path.exists(TestProcess.test_input_path):
+        os.makedirs(TestProcess.test_input_path)
+        try:
+            with ZipFile('test_tiffs_Archive.zip', 'r') as zip_file:
+                zip_file.extractall(TestProcess.test_input_path)
+        except IOError:
+            print("Archive does not exist - downloading files")
+            bands, input_path, scene_id = render_little.download_and_set(
+                TestProcess.fake_job_message)
+
+    monkeypatch.setattr(render_little,
+                        'PATH_DOWNLOAD',
+                        str(TestProcess.test_tmp_download)
+                        )
+
+    result = render_little.process(TestProcess.fake_job_message)
+    # render_little.process returns True if it works:
+    assert result
