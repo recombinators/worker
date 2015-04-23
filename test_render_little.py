@@ -174,7 +174,8 @@ class TestProcess(unittest.TestCase):
         """
         from zipfile import ZipFile
         from shutil import rmtree
-        rmtree(TestProcess.test_tmp_download)
+        if os.path.exists(self.test_tmp_download):
+            rmtree(self.test_tmp_download)
 
         if not os.path.exists(self.test_input_path):
             os.makedirs(self.test_input_path)
@@ -288,7 +289,9 @@ class TestProcess(unittest.TestCase):
 def test_whole_process_run(Key, boto, monkeypatch):
     from zipfile import ZipFile
     from shutil import rmtree
-    rmtree(TestProcess.test_tmp_download)
+    # setup working download directories:
+    if os.path.exists(TestProcess.test_tmp_download):
+        rmtree(TestProcess.test_tmp_download)
     if not os.path.exists(TestProcess.test_input_path):
         os.makedirs(TestProcess.test_input_path)
         try:
