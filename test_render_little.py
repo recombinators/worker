@@ -143,7 +143,7 @@ class TestQueue(unittest.TestCase):
 
 
 # --process tests
-@pytest.mark.usefixtures("setup_dirs", "connection", "db_session", "fake_job1")
+@pytest.mark.usefixtures("connection", "db_session", "fake_job1", "setup_dirs")
 class TestProcess(unittest.TestCase):
 
     fake_job_message = {u'job_id': u'1',
@@ -177,7 +177,7 @@ class TestProcess(unittest.TestCase):
         bands, input_path, scene_id = (render_little.download_and_set(
             self.fake_job_message))
         self.assertEqual(input_path,
-                         os.getcwd() + '/download/LC80470272015005LGN00')
+                         os.getcwd() + '/test_download/LC80470272015005LGN00')
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
@@ -290,12 +290,7 @@ class TestProcess(unittest.TestCase):
 
 @mock.patch('worker.render_little.Key')
 @mock.patch('worker.render_little.boto')
-def test_whole_process_run(Key, boto, monkeypatch, setup_dirs):
-
-    monkeypatch.setattr(render_little,
-                        'PATH_DOWNLOAD',
-                        str(TestProcess.test_tmp_download)
-                        )
+def test_whole_process_run(Key, boto, setup_dirs):
 
     result = render_little.process(TestProcess.fake_job_message)
     # render_little.process returns True if it works:
