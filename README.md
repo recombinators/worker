@@ -1,4 +1,6 @@
-[![Build Status](https://travis-ci.org/recombinators/worker.svg?branch=master)](https://travis-ci.org/recombinators/worker)
+[![Build Status](https://travis-ci.org/recombinators/worker.svg?branch=master?style=flat-square)](https://travis-ci.org/recombinators/worker) [![Code Health](https://landscape.io/github/recombinators/worker/master/landscape.svg?style=flat)](https://landscape.io/github/recombinators/worker/master)
+
+
 
 Worker
 ======
