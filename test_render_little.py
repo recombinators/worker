@@ -139,6 +139,7 @@ class TestProcess(unittest.TestCase):
                        u'scene_id': u'LC80470272015005LGN00',
                        u'email': u'test@test.com'}
 
+    test_tmp_download = os.getcwd() + '/test_download'
     test_input_path = os.getcwd() + '/test_download/LC80470272015005LGN00'
     test_bands = [u'4', u'3', u'2']
     bad_test_bands = [u'4', u'3']
