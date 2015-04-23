@@ -24,6 +24,23 @@ def connection(request):
     return connection
 
 
+@pytest.fixture(scope='module')
+def setup_dirs():
+    from zipfile import ZipFile
+    from shutil import rmtree
+    if os.path.exists(TestProcess.test_tmp_download):
+        rmtree(TestProcess.test_tmp_download)
+    if not os.path.exists(TestProcess.test_input_path):
+        os.makedirs(TestProcess.test_input_path)
+        try:
+            with ZipFile('test_tiffs_Archive.zip', 'r') as zip_file:
+                zip_file.extractall(TestProcess.test_input_path)
+        except IOError:
+            print("Archive does not exist - downloading files")
+            bands, input_path, scene_id = render_little.download_and_set(
+                TestProcess.fake_job_message)
+
+
 @pytest.fixture(autouse=True)
 def db_session(request, connection):
     from transaction import abort
@@ -121,7 +138,7 @@ class TestQueue(unittest.TestCase):
 
 
 # --process tests
-@pytest.mark.usefixtures("connection", "db_session", "fake_job1")
+@pytest.mark.usefixtures("setup_dirs", "connection", "db_session", "fake_job1")
 class TestProcess(unittest.TestCase):
 
     fake_job_message = {u'job_id': u'1',
@@ -168,26 +185,9 @@ class TestProcess(unittest.TestCase):
     def test_resize_bands_creates_files(self):
         """If test files don't exist, make them exist
 
-        The files are either downloaded from a fileserver, or unzipped from an
-        archive file if it exists.
+        The files are either downloaded from a fileserver, or unzipped
+        from an archive file if it exists.
         """
-        from zipfile import ZipFile
-        from shutil import rmtree
-        if os.path.exists(self.test_tmp_download):
-            rmtree(self.test_tmp_download)
-
-        if not os.path.exists(self.test_input_path):
-            os.makedirs(self.test_input_path)
-        if not os.path.exists(self.test_input_path +
-                              '/LC80470272015005LGN00_B4.TIF'):
-            try:
-                with ZipFile('test_tiffs_Archive.zip', 'r') as zip_file:
-                    zip_file.extractall(self.test_input_path)
-            except IOError:
-                print("Archive does not exist - downloading files")
-                bands, input_path, scene_id = render_little.download_and_set(
-                    self.fake_job_message)
-
         delete_me, rename_me = (
             render_little.resize_bands(self.test_bands, self.test_input_path,
                                        self.test_scene_id)
@@ -285,21 +285,7 @@ class TestProcess(unittest.TestCase):
 
 @mock.patch('worker.render_little.Key')
 @mock.patch('worker.render_little.boto')
-def test_whole_process_run(Key, boto, monkeypatch):
-    from zipfile import ZipFile
-    from shutil import rmtree
-    # setup working download directories:
-    if os.path.exists(TestProcess.test_tmp_download):
-        rmtree(TestProcess.test_tmp_download)
-    if not os.path.exists(TestProcess.test_input_path):
-        os.makedirs(TestProcess.test_input_path)
-        try:
-            with ZipFile('test_tiffs_Archive.zip', 'r') as zip_file:
-                zip_file.extractall(TestProcess.test_input_path)
-        except IOError:
-            print("Archive does not exist - downloading files")
-            bands, input_path, scene_id = render_little.download_and_set(
-                TestProcess.fake_job_message)
+def test_whole_process_run(Key, boto, monkeypatch, setup_dirs):
 
     monkeypatch.setattr(render_little,
                         'PATH_DOWNLOAD',
