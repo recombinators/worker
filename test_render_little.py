@@ -10,6 +10,7 @@ import unittest
 import os
 import factory
 import factory.alchemy
+import zipfile
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -114,6 +115,11 @@ def test_write_error(monkeypatch, tmpdir):
 
 
 # --jobs queue
+class TestQueue(unittest.TestCase):
+
+    def test(self):
+        pass
+
 
 # --process tests
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
