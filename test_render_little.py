@@ -12,6 +12,28 @@ import factory
 import factory.alchemy
 
 
+@pytest.fixture()
+def setup_dirs(monkeypatch):
+    from zipfile import ZipFile
+    from shutil import rmtree
+    monkeypatch.setattr(render_little,
+                        'PATH_DOWNLOAD',
+                        str(TestProcess.test_tmp_download)
+                        )
+
+    if os.path.exists(TestProcess.test_tmp_download):
+        rmtree(TestProcess.test_tmp_download)
+    if not os.path.exists(TestProcess.test_input_path):
+        os.makedirs(TestProcess.test_input_path)
+        try:
+            with ZipFile('test_tiffs_Archive.zip', 'r') as zip_file:
+                zip_file.extractall(TestProcess.test_input_path)
+        except IOError:
+            print("Archive does not exist - downloading files")
+            bands, input_path, scene_id = render_little.download_and_set(
+                TestProcess.fake_job_message)
+
+
 @pytest.fixture(scope='session', autouse=True)
 def connection(request):
     engine = create_engine('postgresql://postgres@/test_bar')
@@ -63,9 +85,8 @@ def fake_job1(db_session):
     db_session.add(model_instance)
     db_session.flush()
 
-# --- test db functionality tests
 
-
+# --test db functionality tests
 def test_db_lookup(db_session):
     model_instance = models.UserJob_Model(jobstatus=0,
                                           starttime=datetime.utcnow(),
@@ -80,9 +101,49 @@ def test_db_is_rolled_back(db_session):
     assert 0 == db_session.query(models.UserJob_Model).count()
 
 
-# --- process tests
+# --module function tests
+def test_cleanup_downloads():
+    test_dir = os.getcwd() + '/testdir'
 
-@pytest.mark.usefixtures("connection", "db_session", "fake_job1")
+    if not os.path.exists(test_dir):
+        os.makedirs(test_dir)
+
+    f = open(test_dir + '/test.txt', 'a')
+    f.write('this is a test')
+    f.close()
+
+    assert render_little.cleanup_downloads(test_dir) == True
+
+
+def test_write_activity(monkeypatch, tmpdir):
+    tmp_activity_log = tmpdir.mkdir('log').join('tmp_act_log.txt')
+    monkeypatch.setattr(render_little,
+                        'PATH_ACTIVITY_LOG',
+                        str(tmp_activity_log)
+                        )
+    render_little.write_activity('test message')
+    assert 'test message' in tmp_activity_log.read()
+
+
+def test_write_error(monkeypatch, tmpdir):
+    tmp_error_log = tmpdir.mkdir('log').join('tmp_error_log.txt')
+    monkeypatch.setattr(render_little,
+                        'PATH_ERROR_LOG',
+                        str(tmp_error_log)
+                        )
+    render_little.write_error('test message')
+    assert 'test message' in tmp_error_log.read()
+
+
+# --jobs queue
+class TestQueue(unittest.TestCase):
+
+    def test(self):
+        pass
+
+
+# --process tests
+@pytest.mark.usefixtures("connection", "db_session", "fake_job1", "setup_dirs")
 class TestProcess(unittest.TestCase):
 
     fake_job_message = {u'job_id': u'1',
@@ -99,11 +160,11 @@ class TestProcess(unittest.TestCase):
                        u'scene_id': u'LC80470272015005LGN00',
                        u'email': u'test@test.com'}
 
+    test_tmp_download = os.getcwd() + '/test_download'
     test_input_path = os.getcwd() + '/test_download/LC80470272015005LGN00'
     test_bands = [u'4', u'3', u'2']
     bad_test_bands = [u'4', u'3']
     test_scene_id = 'LC80470272015005LGN00'
-    test_band_output = '432'
     test_file_location = (os.getcwd() +
         '/download/LC80470272015005LGN00/LC80470272015005LGN00_bands_432.TIF')
     test_file_name = 'LC80470272015005LGN00_bands_432'
@@ -116,7 +177,7 @@ class TestProcess(unittest.TestCase):
         bands, input_path, scene_id = (render_little.download_and_set(
             self.fake_job_message))
         self.assertEqual(input_path,
-                         os.getcwd() + '/download/LC80470272015005LGN00')
+                         os.getcwd() + '/test_download/LC80470272015005LGN00')
         self.assertEqual(bands, [u'4', u'3', u'2'])
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
@@ -127,17 +188,20 @@ class TestProcess(unittest.TestCase):
                 self.bad_job_message))
 
     def test_resize_bands_creates_files(self):
-        if not os.path.exists(self.test_input_path):
-            os.makedirs(self.test_input_path)
+        """If test files don't exist, make them exist
+
+        The files are either downloaded from a fileserver, or unzipped
+        from an archive file if it exists.
+        """
         delete_me, rename_me = (
             render_little.resize_bands(self.test_bands, self.test_input_path,
                                        self.test_scene_id)
-            )
+        )
         expected_delete_me = (
             [self.test_input_path + '/LC80470272015005LGN00_B4.TIF',
              self.test_input_path + '/LC80470272015005LGN00_B3.TIF',
              self.test_input_path + '/LC80470272015005LGN00_B2.TIF']
-            )
+        )
         self.assertEqual(delete_me, expected_delete_me)
 
     def test_resize_bands_fails_with_message(self):
@@ -150,25 +214,11 @@ class TestProcess(unittest.TestCase):
         print(e.value)
         assert 'gdal_translate did not downsize images' in str(e.value)
 
-    @mock.patch('worker.render_little.Key')
-    @mock.patch('worker.render_little.boto')
-    def test_upload_to_s3(self, boto, Key):
-        self.assertIsNone(render_little.upload_to_s3(self.test_file_location,
-                                                     self.test_file_png,
-                                                     self.fake_job_message
-                                                     ))
-
-    @mock.patch('worker.render_little.Key')
-    @mock.patch('worker.render_little.boto')
-    def test_upload_to_s3_fails_with_exception(self, boto, Key):
-        # missing job argument to cause exception
-        render_little.boto.connect_s3.side_effect = Exception()
-        with pytest.raises(Exception) as e:
-            render_little.upload_to_s3(None,
-                                       '',
-                                       self.bad_job_message,
-                                       )
-        assert 'S3 Upload failed' in str(e.value)
+    @mock.patch('worker.render_little.os')
+    def test_remove_and_rename(self, mock_os):
+        render_little.remove_and_rename(['filelist1'], ['filelist2'])
+        mock_os.remove.assert_called_with('filelist1')
+        mock_os.rename.assert_called_with('filelist2', 'filelist1')
 
     @mock.patch('worker.render_little.Process')
     def test_merge_images(self, Process):
@@ -186,12 +236,6 @@ class TestProcess(unittest.TestCase):
         with pytest.raises(Exception) as e:
             render_little.merge_images('', self.bad_test_bands)
         assert 'Processing/landsat-util failed' in str(e.value)
-
-    @mock.patch('worker.render_little.os')
-    def test_remove_and_rename(self, mock_os):
-        render_little.remove_and_rename(['filelist1'], ['filelist2'])
-        mock_os.remove.assert_called_with('filelist1')
-        mock_os.rename.assert_called_with('filelist2', 'filelist1')
 
     def test_name_files(self):
         file_location, file_name, file_tif = (
@@ -214,15 +258,40 @@ class TestProcess(unittest.TestCase):
                                            self.test_file_tif,
                                            self.test_file_location])
 
+    @mock.patch('worker.render_little.Key')
+    @mock.patch('worker.render_little.boto')
+    def test_upload_to_s3(self, boto, Key):
+        self.assertIsNone(render_little.upload_to_s3(self.test_file_location,
+                                                     self.test_file_png,
+                                                     self.fake_job_message
+                                                     ))
 
-def test_cleanup_downloads():
-    test_dir = os.getcwd() + '/testdir'
+    @mock.patch('worker.render_little.Key')
+    @mock.patch('worker.render_little.boto')
+    def test_upload_to_s3_fails_with_exception(self, boto, Key):
+        # missing job argument to cause exception
+        render_little.boto.connect_s3.side_effect = Exception()
+        with pytest.raises(Exception) as e:
+            render_little.upload_to_s3(None,
+                                       '',
+                                       self.bad_job_message,
+                                       )
+        assert 'S3 Upload failed' in str(e.value)
 
-    if not os.path.exists(test_dir):
-        os.makedirs(test_dir)
+    @mock.patch('worker.render_little.rmtree')
+    def test_delete_files(self, mock_rmtree):
+        render_little.delete_files(self.test_input_path)
+        mock_rmtree.assert_called_with(self.test_input_path)
+        # check error checking:
+        render_little.rmtree.side_effect = Exception(OSError)
+        with pytest.raises(Exception):
+            render_little.delete_files('files')
 
-    f = open(test_dir + '/test.txt', 'a')
-    f.write('this is a test')
-    f.close()
 
-    assert render_little.cleanup_downloads(test_dir) == True
+@mock.patch('worker.render_little.Key')
+@mock.patch('worker.render_little.boto')
+def test_whole_process_run(Key, boto, setup_dirs):
+
+    result = render_little.process(TestProcess.fake_job_message)
+    # render_little.process returns True if it works:
+    assert result
