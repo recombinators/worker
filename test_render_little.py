@@ -12,22 +12,15 @@ import factory
 import factory.alchemy
 
 
-@pytest.fixture(scope='session', autouse=True)
-def connection(request):
-    engine = create_engine('postgresql://postgres@/test_bar')
-    models.Base.metadata.create_all(engine)
-    connection = engine.connect()
-    models.DBSession.registry.clear()
-    models.DBSession.configure(bind=connection)
-    models.Base.metadata.bind = engine
-    request.addfinalizer(models.Base.metadata.drop_all)
-    return connection
-
-
-@pytest.fixture(scope='module')
-def setup_dirs():
+@pytest.fixture()
+def setup_dirs(monkeypatch):
     from zipfile import ZipFile
     from shutil import rmtree
+    monkeypatch.setattr(render_little,
+                        'PATH_DOWNLOAD',
+                        str(TestProcess.test_tmp_download)
+                        )
+
     if os.path.exists(TestProcess.test_tmp_download):
         rmtree(TestProcess.test_tmp_download)
     if not os.path.exists(TestProcess.test_input_path):
@@ -39,6 +32,18 @@ def setup_dirs():
             print("Archive does not exist - downloading files")
             bands, input_path, scene_id = render_little.download_and_set(
                 TestProcess.fake_job_message)
+
+
+@pytest.fixture(scope='session', autouse=True)
+def connection(request):
+    engine = create_engine('postgresql://postgres@/test_bar')
+    models.Base.metadata.create_all(engine)
+    connection = engine.connect()
+    models.DBSession.registry.clear()
+    models.DBSession.configure(bind=connection)
+    models.Base.metadata.bind = engine
+    request.addfinalizer(models.Base.metadata.drop_all)
+    return connection
 
 
 @pytest.fixture(autouse=True)
