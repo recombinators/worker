@@ -44,4 +44,3 @@ env:
 
 script:
   - py.test test_render_1.py test_render_little.py
-  - py.test landsat-util/
