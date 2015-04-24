@@ -1,4 +1,3 @@
-import sys
 import pytest
 import render_little
 import models
