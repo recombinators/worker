@@ -1,7 +1,6 @@
 import sys
-sys.path.append('landsat-util/landsat')
 from landsat.downloader import Downloader
-from image import Process
+from landsat.landsat import Process
 from boto.s3.key import Key
 from shutil import rmtree
 from datetime import datetime

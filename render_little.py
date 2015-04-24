@@ -1,10 +1,9 @@
 import os
 import sys
-sys.path.append('landsat-util/landsat')
 import boto
 import subprocess
-from downloader import Downloader
-from image import Process
+from landsat.downloader import Downloader
+from landsat.landsat import Process
 from boto.s3.key import Key
 from shutil import rmtree
 from datetime import datetime
@@ -15,7 +14,6 @@ from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle)
 
 
-os.getcwd()
 PATH_DOWNLOAD = os.getcwd() + '/download'
 PATH_ERROR_LOG = os.getcwd() + '/logs' + '/error_log.txt'
 PATH_ACTIVITY_LOG = os.getcwd() + '/logs' + '/activity_log.txt'
