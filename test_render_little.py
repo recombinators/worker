@@ -111,8 +111,8 @@ def test_cleanup_downloads():
     f = open(test_dir + '/test.txt', 'a')
     f.write('this is a test')
     f.close()
-
-    assert render_little.cleanup_downloads(test_dir) == True
+    # cleanup_downloads returns True if works
+    assert render_little.cleanup_downloads(test_dir)
 
 
 def test_write_activity(monkeypatch, tmpdir):
