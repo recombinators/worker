@@ -2,13 +2,13 @@ import sys
 import pytest
 import render_little
 import models
-from sqlalchemy import create_engine
-from datetime import datetime
 import mock
 import unittest
 import os
 import factory
 import factory.alchemy
+from sqlalchemy import create_engine
+from datetime import datetime
 
 
 @pytest.fixture()
