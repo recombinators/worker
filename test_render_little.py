@@ -140,8 +140,23 @@ class TestQueue(unittest.TestCase):
         pass
 
 
+@pytest.mark.usefixtures("setup_dirs")
+class TestImageFiles(unittest.TestCase):
+    """These tests require real files"""
+
+    @mock.patch('worker.render_little.Downloader')
+    def test_download_returns_correct_values(self, Downloader):
+        bands, input_path, scene_id = (render_little.download_and_set(
+            TestProcess.fake_job_message))
+        self.assertEqual(input_path,
+                         os.getcwd() + '/test_download/LC80470272015005LGN00')
+        self.assertEqual(bands, [u'4', u'3', u'2'])
+        self.assertEqual(scene_id, 'LC80470272015005LGN00')
+
+
+
 # --process tests
-@pytest.mark.usefixtures("connection", "db_session", "fake_job1", "setup_dirs")
+@pytest.mark.usefixtures("connection", "db_session", "fake_job1")
 class TestProcess(unittest.TestCase):
 
     fake_job_message = {u'job_id': u'1',
@@ -170,14 +185,6 @@ class TestProcess(unittest.TestCase):
     test_file_png = 'pre_LC80470272015005LGN00_bands_432.png'
     test_file_tif = 'pre_LC80470272015005LGN00_bands_432.TIF'
 
-    @mock.patch('worker.render_little.Downloader')
-    def test_download_returns_correct_values(self, Downloader):
-        bands, input_path, scene_id = (render_little.download_and_set(
-            self.fake_job_message))
-        self.assertEqual(input_path,
-                         os.getcwd() + '/test_download/LC80470272015005LGN00')
-        self.assertEqual(bands, [u'4', u'3', u'2'])
-        self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
     @mock.patch('worker.render_little.Downloader')
     def test_download_errors_correctly(self, Downloader):
