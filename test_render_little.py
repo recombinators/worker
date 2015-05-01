@@ -84,6 +84,26 @@ def fake_job1(db_session):
     db_session.flush()
 
 
+@pytest.fixture()
+def write_activity_fix(monkeypatch, tmpdir):
+    tmp_activity_log = tmpdir.mkdir('log').join('tmp_act_log.txt')
+    monkeypatch.setattr(render_little,
+                        'PATH_ACTIVITY_LOG',
+                        str(tmp_activity_log)
+                        )
+    return tmp_activity_log
+
+
+@pytest.fixture()
+def write_error_fix(monkeypatch, tmpdir):
+    tmp_error_log = tmpdir.mkdir('log').join('tmp_error_log.txt')
+    monkeypatch.setattr(render_little,
+                        'PATH_ERROR_LOG',
+                        str(tmp_error_log)
+                        )
+    return tmp_error_log
+
+
 # --test db functionality tests
 def test_db_lookup(db_session):
     model_instance = models.UserJob_Model(jobstatus=0,
@@ -113,32 +133,21 @@ def test_cleanup_downloads():
     assert render_little.cleanup_downloads(test_dir)
 
 
-def test_write_activity(monkeypatch, tmpdir):
-    tmp_activity_log = tmpdir.mkdir('log').join('tmp_act_log.txt')
-    monkeypatch.setattr(render_little,
-                        'PATH_ACTIVITY_LOG',
-                        str(tmp_activity_log)
-                        )
+def test_write_activity(write_activity_fix):
     render_little.write_activity('test message')
-    assert 'test message' in tmp_activity_log.read()
+    assert 'test message' in write_activity_fix.read()
 
 
-def test_write_error(monkeypatch, tmpdir):
-    tmp_error_log = tmpdir.mkdir('log').join('tmp_error_log.txt')
-    monkeypatch.setattr(render_little,
-                        'PATH_ERROR_LOG',
-                        str(tmp_error_log)
-                        )
+def test_write_error(write_error_fix):
     render_little.write_error('test message')
-    assert 'test message' in tmp_error_log.read()
+    assert 'test message' in write_error_fix.read()
 
 
 # --jobs queue
+@pytest.mark.usefixtures("connection", "db_session", "fake_job1")
 class TestQueue(unittest.TestCase):
 
-    def test(self):
-        pass
-
+    pass
 
 # --process tests
 @pytest.mark.usefixtures("setup_dirs")
