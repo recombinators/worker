@@ -140,6 +140,7 @@ class TestQueue(unittest.TestCase):
         pass
 
 
+# --process tests
 @pytest.mark.usefixtures("setup_dirs")
 class TestImageFiles(unittest.TestCase):
     """These tests require real files"""
@@ -154,8 +155,6 @@ class TestImageFiles(unittest.TestCase):
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
 
-
-# --process tests
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
 class TestProcess(unittest.TestCase):
 
@@ -184,7 +183,6 @@ class TestProcess(unittest.TestCase):
     test_file_name_zip = 'LC80470272015005LGN00_bands_432.zip'
     test_file_png = 'pre_LC80470272015005LGN00_bands_432.png'
     test_file_tif = 'pre_LC80470272015005LGN00_bands_432.TIF'
-
 
     @mock.patch('worker.render_little.Downloader')
     def test_download_errors_correctly(self, Downloader):
