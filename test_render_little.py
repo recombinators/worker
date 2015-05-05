@@ -96,7 +96,10 @@ def write_activity_fix(monkeypatch, tmpdir):
 
 @pytest.fixture()
 def write_error_fix(monkeypatch, tmpdir):
-    tmp_error_log = tmpdir.mkdir('log').join('tmp_error_log.txt')
+    if tmpdir.exists():
+        tmp_error_log = tmpdir.join('tmp_error_log.txt')
+    else:
+        tmp_error_log = tmpdir.mkdir('log').join('tmp_error_log.txt')
     monkeypatch.setattr(render_little,
                         'PATH_ERROR_LOG',
                         str(tmp_error_log)
@@ -147,7 +150,28 @@ def test_write_error(write_error_fix):
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
 class TestQueue(unittest.TestCase):
 
-    pass
+    class Fake_Job_Class():
+        def __init__(self, message_content, message_attributes):
+            self.message_content = message_content
+            self.message_attributes = message_attributes
+
+    message = {'job_id': {'string_value': 1, 'data_type': 'Number'},
+               'band_2': {'string_value': 3, 'data_type': 'Number'},
+               'band_3': {'string_value': 2, 'data_type': 'Number'},
+               'band_1': {'string_value': 4, 'data_type': 'Number'},
+               'scene_id': {'string_value': 'LC80470272015005LGN00',
+               'data_type': 'String'},
+               'email': {'string_value': 'test@test.com',
+                         'data_type': 'String'}}
+
+    fake_job_for_queue = [Fake_Job_Class("job", message)]
+
+    @pytest.mark.usefixtures("write_activity_fix", "write_error_fix")
+    def test_get_job_attributes_returns_correctly(self):
+        result = render_little.get_job_attributes(self.fake_job_for_queue)
+        assert result == (
+            {'job_id': 1, 'band_2': 3, 'band_3': 2, 'band_1': 4, 'scene_id': 'LC80470272015005LGN00', 'email': 'test@test.com'})
+
 
 # --process tests
 @pytest.mark.usefixtures("setup_dirs")
