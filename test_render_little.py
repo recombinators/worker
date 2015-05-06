@@ -86,8 +86,8 @@ def fake_job1(db_session):
 
 @pytest.fixture()
 def write_activity_fix(monkeypatch, tmpdir):
-    if tmpdir.exists():
-        tmp_activity_log = tmpdir.join('tmp_act_log.txt')
+    if tmpdir.join('log').exists():
+        tmp_activity_log = tmpdir.join('log/tmp_act_log.txt')
     else:
         tmp_activity_log = tmpdir.mkdir('log').join('tmp_act_log.txt')
     monkeypatch.setattr(render_little,
@@ -99,8 +99,8 @@ def write_activity_fix(monkeypatch, tmpdir):
 
 @pytest.fixture()
 def write_error_fix(monkeypatch, tmpdir):
-    if tmpdir.exists():
-        tmp_error_log = tmpdir.join('tmp_error_log.txt')
+    if tmpdir.join('log').exists():
+        tmp_error_log = tmpdir.join('log/tmp_error_log.txt')
     else:
         tmp_error_log = tmpdir.mkdir('log').join('tmp_error_log.txt')
     monkeypatch.setattr(render_little,
@@ -182,8 +182,8 @@ class TestQueue(unittest.TestCase):
 
     def test_get_job_attributes_logs_errors_correctly(self):
         render_little.get_job_attributes(self.bad_fake_job)
-        assert "Attribute retrieval fail because" in str(self.tmpdir.join('tmp_act_log.txt').read())
-        assert "Attribute retrieval traceback" in str(self.tmpdir.join('tmp_error_log.txt').read())
+        assert "Attribute retrieval fail because" in str(self.tmpdir.join('log/tmp_act_log.txt').read())
+        assert "Attribute retrieval traceback" in str(self.tmpdir.join('log/tmp_error_log.txt').read())
 
 
 # --process tests
