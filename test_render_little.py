@@ -147,7 +147,8 @@ def test_write_error(write_error_fix):
 
 
 # --jobs queue
-@pytest.mark.usefixtures("connection", "db_session", "fake_job1")
+@pytest.mark.usefixtures("connection", "db_session", "fake_job1",
+                         "write_activity_fix", "write_error_fix")
 class TestQueue(unittest.TestCase):
 
     class Fake_Job_Class():
@@ -165,12 +166,23 @@ class TestQueue(unittest.TestCase):
                          'data_type': 'String'}}
 
     fake_job_for_queue = [Fake_Job_Class("job", message)]
+    bad_fake_job_for_queue = ['bad']
 
     @pytest.mark.usefixtures("write_activity_fix", "write_error_fix")
     def test_get_job_attributes_returns_correctly(self):
         result = render_little.get_job_attributes(self.fake_job_for_queue)
         assert result == (
             {'job_id': 1, 'band_2': 3, 'band_3': 2, 'band_1': 4, 'scene_id': 'LC80470272015005LGN00', 'email': 'test@test.com'})
+
+    # The following test is being a mega-pain...
+
+    #@mock.patch('worker.render_little.get_job_attributes')
+    #def test_get_job_attributes_errors_correctly(self,
+    #                                             get_job_attributes):
+    #    render_little.get_job_attributes.side_effect = Exception()
+    #    with pytest.raises(Exception):
+    #        render_little.get_job_attributes(self.bad_fake_job_for_queue)
+    #    assert "Attribute retrieval fail because" in write_activity_fix
 
 
 # --process tests
