@@ -127,7 +127,7 @@ if __name__ == '__main__':
 
     AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
     AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
-    LANDSAT_JOBS_QUEUE = 'landsat_jobs_queue'
+    LANDSAT_JOBS_QUEUE = 'test_queue'
     REGION = 'us-west-2'
 
     conn = make_SQS_connection(REGION,

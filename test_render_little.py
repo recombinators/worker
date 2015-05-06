@@ -185,6 +185,14 @@ class TestQueue(unittest.TestCase):
         assert "Attribute retrieval fail because" in str(self.tmpdir.join('log/tmp_act_log.txt').read())
         assert "Attribute retrieval traceback" in str(self.tmpdir.join('log/tmp_error_log.txt').read())
 
+    @mock.patch('worker.render_little.delete_message_from_handle')
+    def test_delete_job_from_queue(self, mock_delete):
+        mock_delete.return_value = True
+        render_little.delete_job_from_queue('mock_SQSconn',
+                                                     self.fake_job_for_queue,
+                                                     'fake_queue')
+        assert "Delete success = True" in str(self.tmpdir.join('log/tmp_act_log.txt').read())
+
 
 # --process tests
 @pytest.mark.usefixtures("setup_dirs")

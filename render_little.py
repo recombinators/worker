@@ -82,6 +82,7 @@ def get_job_attributes(job_message):
 
 def delete_job_from_queue(SQSconn, job_message, jobs_queue):
     """Remove the job from the job queue."""
+    del_status = None
     try:
         del_status = delete_message_from_handle(SQSconn,
                                                 jobs_queue,
