@@ -29,7 +29,6 @@ before_install:
 
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib gdal scikit-image requests six nose dateutil
-  #- conda config --add channels https://conda.binstar.org/rsignell
   - pip install rasterio
   - export PATH=$PATH:$PWD/landsat-util/landsat/
   - pip install -r requirements.txt
