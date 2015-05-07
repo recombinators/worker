@@ -193,6 +193,15 @@ class TestQueue(unittest.TestCase):
                                             'fake_queue')
         assert "Delete success = True" in str(self.tmpdir.join('log/tmp_act_log.txt').read())
 
+    @mock.patch('worker.render_little.delete_message_from_handle')
+    def test_delete_job_from_queue_errors_correctly(self, mock_delete):
+        mock_delete.return_value = False
+        mock_delete.side_effect = Exception('very bad things')
+        render_little.delete_job_from_queue('mock_SQSconn',
+                                            self.bad_fake_job,
+                                            'fake_queue')
+        assert "Delete message fail because very bad things" in str(self.tmpdir.join('log/tmp_error_log.txt').read())
+
 
 # --process tests
 @pytest.mark.usefixtures("setup_dirs")
