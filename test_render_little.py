@@ -202,6 +202,12 @@ class TestQueue(unittest.TestCase):
                                             'fake_queue')
         assert "Delete message fail because very bad things" in str(self.tmpdir.join('log/tmp_error_log.txt').read())
 
+    @mock.patch('worker.render_little.process')
+    def test_process_image_success(self, mock_process):
+        mock_process.return_value = True
+        render_little.process_image(TestProcess.fake_job_message)
+        assert "Job Process success = True" in str(self.tmpdir.join('log/tmp_act_log.txt').read())
+
 
 # --process tests
 @pytest.mark.usefixtures("setup_dirs")
