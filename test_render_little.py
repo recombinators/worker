@@ -189,8 +189,8 @@ class TestQueue(unittest.TestCase):
     def test_delete_job_from_queue(self, mock_delete):
         mock_delete.return_value = True
         render_little.delete_job_from_queue('mock_SQSconn',
-                                                     self.fake_job_for_queue,
-                                                     'fake_queue')
+                                            self.fake_job_for_queue,
+                                            'fake_queue')
         assert "Delete success = True" in str(self.tmpdir.join('log/tmp_act_log.txt').read())
 
 
