@@ -64,6 +64,7 @@ def write_error(message):
 # Begin checking for jobs
 def get_job_attributes(job_message):
     """Get job attributes, log the result."""
+    job_attributes = None
     try:
         job_attributes = get_attributes(job_message[0])
         write_activity(job_attributes)
