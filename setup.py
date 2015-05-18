@@ -7,14 +7,22 @@ with codecs_open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 
-setup(name='snapsat-worker',
-        version='0.1.0',
-        description='Builds composite Landsat images.',
-        long_description=long_description,
-        keywords='landsat, geospatial',
-        url='http://github.com/recombinators/worker',
-        author='Snapsat',
-        author_email='snapsat@snapsat.org',
-        license='MIT',
-        packages=['snapsat-worker'],
-        zip_safe=False)
+setup(
+    name='snapsat-worker',
+    version='0.1.0',
+    description='Builds composite Landsat images.',
+    long_description=long_description,
+    keywords='landsat, geospatial',
+    url='http://github.com/recombinators/worker',
+    author='Snapsat',
+    author_email='snapsat@snapsat.org',
+    license='MIT',
+    packages=['snapsat-worker'],
+    zip_safe=False,
+    install_requires=[
+        'sqlalchemy>=0.9.9',
+        'requests>=2.5.3',
+        'landsat-util>=0.6.2',
+        'boto>=2.36.0'
+    ]
+)
