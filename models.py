@@ -30,6 +30,9 @@ class WorkerLog(Base):
     statement = Column(UnicodeText)
     value = Column(UnicodeText)
 
+    @classmethod
+    def write_error(cls, instanceid, statement, value):
+
 
 class RenderCache_Model(Base):
     """
