@@ -54,9 +54,9 @@ def checking_for_jobs():
     """Poll jobs queue for jobs."""
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
                                   AWS_SECRET_ACCESS_KEY)
-    write_activity(SQSconn)
+    write_activity('SQS Connection', SQSconn, 'success')
     jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
-    write_activity(jobs_queue)
+    write_activity('Jobs queue', jobs_queue, 'success')
     while True:
         job_message = get_message(jobs_queue)
         if job_message:

@@ -29,8 +29,8 @@ except:
 
 
 def cleanup_downloads(folder_path):
-    """
-    Clean up download folder if process fails.
+    """Clean up download folder if process fails.
+
     Return True if the download folder is empty.
     """
     for file_object in os.listdir(folder_path):
@@ -50,14 +50,8 @@ def write_activity(statement, value, activity_type):
     WorkerLog.log_entry(INSTANCE_ID, statement, value, activity_type)
 
 
-def main():
-    checking_for_jobs()
-
-
 def checking_for_jobs():
-    """
-    Poll jobs queue for jobs.
-    """
+    """Poll jobs queue for jobs."""
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
                                   AWS_SECRET_ACCESS_KEY)
     write_activity('SQS Connection', SQSconn, 'success')
@@ -208,4 +202,4 @@ def process(job):
     return True
 
 if __name__ == '__main__':
-    main()
+    checking_for_jobs()
