@@ -32,6 +32,13 @@ class WorkerLog(Base):
 
     @classmethod
     def write_error(cls, instanceid, statement, value):
+        current_time = datetime.utcnow()
+        entry = RenderCache_Model(instanceid=instanceid,
+                                  datetime=current_time,
+                                  statement=value,
+                                  value=value)
+        DBSession.add(entry)
+        transaction.commit()
 
 
 class RenderCache_Model(Base):
