@@ -80,9 +80,9 @@ def checking_for_jobs():
                 del_status = delete_message_from_handle(SQSconn,
                                                         jobs_queue,
                                                         job_message[0])
-                write_activity('Delete status', del_status, 'success')
+                write_activity('Delete status', unicode(del_status), 'success')
             except Exception as e:
-                write_activity('Delete status', del_status, 'error')
+                write_activity('Delete status', unicode(del_status), 'error')
                 write_activity('Delete message fail because ',
                                e.message, 'error')
                 write_activity('Delete message traceback',
@@ -91,10 +91,13 @@ def checking_for_jobs():
             # Process full res images
             try:
                 proc_status = process(job_attributes)
-                write_activity('Job process status', proc_status, 'success')
+                write_activity('Job process status',
+                               unicode(proc_status), 'success')
             except Exception as e:
+                proc_status = False
                 # If processing fails, send message to pyramid to update db
-                write_activity('Job process success', False, 'error')
+                write_activity('Job process success',
+                               unicode(proc_status), 'error')
                 write_activity('Job process fail because',
                                e.message, 'error')
                 write_activity('Job proceess traceback',
