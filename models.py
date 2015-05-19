@@ -35,7 +35,7 @@ class WorkerLog(Base):
     def log_entry(cls, instanceid, statement, value, activity_type):
         current_time = datetime.utcnow()
         entry = WorkerLog(instanceid=instanceid,
-                          datetime=current_time,
+                          date_time=current_time,
                           statement=value,
                           value=value,
                           activitytype=activity_type)
