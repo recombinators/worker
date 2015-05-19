@@ -29,14 +29,16 @@ class WorkerLog(Base):
     date_time = Column(DateTime)
     statement = Column(UnicodeText)
     value = Column(UnicodeText)
+    acitvitytype = Column(UnicodeText)
 
     @classmethod
-    def log_entry(cls, instanceid, statement, value):
+    def log_entry(cls, instanceid, statement, value, activitytype):
         current_time = datetime.utcnow()
         entry = RenderCache_Model(instanceid=instanceid,
                                   datetime=current_time,
                                   statement=value,
-                                  value=value)
+                                  value=value,
+                                  activitytype=activitytype)
         DBSession.add(entry)
         transaction.commit()
 
