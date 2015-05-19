@@ -11,12 +11,24 @@ import requests
 mailgun_key = os.environ['MAILGUN_KEY']
 mailgun_url = os.environ['MAILGUN_URL']
 
-DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
+DBSession = scoped_session(
+    sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
 engine = create_engine(os.environ.get('DATABASE_URL'))
 DBSession.configure(bind=engine)
 Base.metadata.bind = engine
+
+
+class WorkerLog(Base):
+    """Model for the worker log."""
+
+    __tablename__ = 'worker_log'
+    id = Column(Integer, primary_key=True)
+    instanceid = Column(UnicodeText)
+    date_time = Column(DateTime)
+    statement = Column(UnicodeText)
+    value = Column(UnicodeText)
 
 
 class RenderCache_Model(Base):
