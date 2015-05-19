@@ -60,52 +60,67 @@ def checking_for_jobs():
     while True:
         job_message = get_message(jobs_queue)
         if job_message:
-            try:
-                job_attributes = get_attributes(job_message[0])
-                write_activity('Job attributes',
-                               job_attributes, 'success')
-            except Exception as e:
-                write_activity('Attribute retrieval fail because',
-                               e.message, 'error')
-                write_activity('Attribute retrieval traceback',
-                               sys.exc_info(), 'error')
-
-            try:
-                del_status = delete_message_from_handle(SQSconn,
-                                                        jobs_queue,
-                                                        job_message[0])
-                write_activity('Delete status', unicode(del_status), 'success')
-            except Exception as e:
-                write_activity('Delete status', unicode(del_status), 'error')
-                write_activity('Delete message fail because ',
-                               e.message, 'error')
-                write_activity('Delete message traceback',
-                               sys.exc_info(), 'error')
+            job_attributes = get_job_attributes(job_message)
+            delete_job_from_queue(SQSconn, job_message, jobs_queue)
 
             # Process full res images
-            try:
-                proc_status = process(job_attributes)
-                write_activity('Job process status',
-                               unicode(proc_status), 'success')
-            except Exception as e:
-                proc_status = False
-                # If processing fails, send message to pyramid to update db
-                write_activity('Job process success',
-                               unicode(proc_status), 'error')
-                write_activity('Job process fail because',
-                               e.message, 'error')
-                write_activity('Job proceess traceback',
-                               sys.exc_info(), 'error')
-                cleanup_status = cleanup_downloads(PATH_DOWNLOAD)
-                write_activity('Cleanup downloads success',
-                               cleanup_status, 'error')
-                UserJob_Model.set_job_status(job_attributes['job_id'], 10)
+            process_image(job_attributes)
+
+
+# Begin checking for jobs
+def get_job_attributes(job_message):
+    """Get job attributes, log the result."""
+    job_attributes = None
+    try:
+        job_attributes = get_attributes(job_message[0])
+        write_activity('Job attributes',
+                       job_attributes, 'success')
+    except Exception as e:
+        write_activity('Attribute retrieval fail because',
+                       e.message, 'error')
+        write_activity('Attribute retrieval traceback',
+                       sys.exc_info(), 'error')
+    return job_attributes
+
+
+def delete_job_from_queue(SQSconn, job_message, jobs_queue):
+    """Remove the job from the job queue."""
+    try:
+        del_status = delete_message_from_handle(SQSconn,
+                                                jobs_queue,
+                                                job_message[0])
+        write_activity('Delete status', unicode(del_status), 'success')
+    except Exception as e:
+        write_activity('Delete status', unicode(del_status), 'error')
+        write_activity('Delete message fail because ',
+                       e.message, 'error')
+        write_activity('Delete message traceback',
+                       sys.exc_info(), 'error')
+
+
+def process_image(job_attributes):
+    """Begin the image processing and log the results."""
+    try:
+        proc_status = process(job_attributes)
+        write_activity('Job process status',
+                       unicode(proc_status), 'success')
+    except Exception as e:
+        proc_status = False
+        # If processing fails, send message to pyramid to update db
+        write_activity('Job process success',
+                       unicode(proc_status), 'error')
+        write_activity('Job process fail because',
+                       e.message, 'error')
+        write_activity('Job proceess traceback',
+                       sys.exc_info(), 'error')
+        cleanup_status = cleanup_downloads(PATH_DOWNLOAD)
+        write_activity('Cleanup downloads success',
+                       cleanup_status, 'error')
+        UserJob_Model.set_job_status(job_attributes['job_id'], 10)
 
 
 def download_and_set(job, PATH_DOWNLOAD):
-    """
-    Download the image file.
-    """
+    """Download the image file."""
     UserJob_Model.set_job_status(job['job_id'], 1)
     b = Downloader(verbose=False, download_dir=PATH_DOWNLOAD)
     scene_id = str(job['scene_id'])
@@ -115,10 +130,8 @@ def download_and_set(job, PATH_DOWNLOAD):
     return input_path, bands, scene_id
 
 
-def process_image(job, input_path, bands, PATH_DOWNLOAD, scene_id):
-    """
-    Process images using landsat-util.
-    """
+def merge_images(job, input_path, bands, PATH_DOWNLOAD, scene_id):
+    """Process images using landsat-util."""
     UserJob_Model.set_job_status(job['job_id'], 2)
     c = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD, verbose=False)
     c.run(pansharpen=False)
@@ -180,8 +193,8 @@ def process(job):
     # download and set vars
     input_path, bands, scene_id = download_and_set(job, PATH_DOWNLOAD)
 
-    # process image
-    band_output, file_location = process_image(
+    # call landsat-util to merge images
+    band_output, file_location = merge_images(
         job, input_path, bands, PATH_DOWNLOAD, scene_id
     )
 
