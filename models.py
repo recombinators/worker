@@ -29,7 +29,7 @@ class WorkerLog(Base):
     date_time = Column(DateTime)
     statement = Column(UnicodeText)
     value = Column(UnicodeText)
-    acitvitytype = Column(UnicodeText)
+    activitytype = Column(UnicodeText)
 
     @classmethod
     def log_entry(cls, instanceid, statement, value, activity_type):
