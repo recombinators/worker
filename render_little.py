@@ -54,9 +54,9 @@ def checking_for_jobs():
     """Poll jobs queue for jobs."""
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
                                   AWS_SECRET_ACCESS_KEY)
-    write_activity('SQS Connection', SQSconn, 'success')
+    write_activity('SQS Connection', SQSconn.server_name(), 'success')
     jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
-    write_activity('Jobs queue', jobs_queue, 'success')
+    write_activity('Jobs queue', jobs_queue.name, 'success')
     while True:
         job_message = get_message(jobs_queue)
         if job_message:
@@ -74,12 +74,10 @@ def get_job_attributes(job_message):
     try:
         job_attributes = get_attributes(job_message[0])
         write_activity('Job attributes',
-                       job_attributes, 'success')
+                       str(job_attributes), 'success')
     except Exception as e:
         write_activity('Attribute retrieval fail because',
                        e.message, 'error')
-        write_activity('Attribute retrieval traceback',
-                       sys.exc_info(), 'error')
     return job_attributes
 
 
@@ -94,8 +92,6 @@ def delete_job_from_queue(SQSconn, job_message, jobs_queue):
         write_activity('Delete status', unicode(del_status), 'error')
         write_activity('Delete message fail because ',
                        e.message, 'error')
-        write_activity('Delete message traceback',
-                       sys.exc_info(), 'error')
 
 
 def process_image(job_attributes):
@@ -111,8 +107,6 @@ def process_image(job_attributes):
                        unicode(proc_status), 'error')
         write_activity('Job process fail because',
                        e.message, 'error')
-        write_activity('Job proceess traceback',
-                       sys.exc_info(), 'error')
         cleanup_status = cleanup_downloads(PATH_DOWNLOAD)
         write_activity('Cleanup downloads success',
                        cleanup_status, 'error')
