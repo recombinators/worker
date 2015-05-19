@@ -31,7 +31,7 @@ class WorkerLog(Base):
     value = Column(UnicodeText)
 
     @classmethod
-    def write_error(cls, instanceid, statement, value):
+    def log_entry(cls, instanceid, statement, value):
         current_time = datetime.utcnow()
         entry = RenderCache_Model(instanceid=instanceid,
                                   datetime=current_time,
