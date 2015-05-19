@@ -6,7 +6,7 @@ from shutil import rmtree
 from datetime import datetime
 from boto import utils
 import socket
-from models import UserJob_Model
+from models import UserJob_Model, WorkerLog
 from sqs import (make_SQS_connection, get_queue, get_message,
                  get_attributes, delete_message_from_handle)
 import os
@@ -15,8 +15,6 @@ import zipfile
 
 os.getcwd()
 PATH_DOWNLOAD = os.getcwd() + '/download'
-PATH_ERROR_LOG = os.getcwd() + '/logs' + '/error_log.txt'
-PATH_ACTIVITY_LOG = os.getcwd() + '/logs' + '/activity_log.txt'
 
 AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
@@ -47,22 +45,9 @@ def cleanup_downloads(folder_path):
         return False
 
 
-def write_activity(message):
-    """
-    Write to activity log.
-    """
-    fo = open(PATH_ACTIVITY_LOG, 'a')
-    fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
-    fo.close()
-
-
-def write_error(message):
-    """
-    Write to error log.
-    """
-    fo = open(PATH_ERROR_LOG, 'a')
-    fo.write('[{}] {}\n'.format(datetime.utcnow(), message))
-    fo.close()
+def write_activity(statement, value, activity_type):
+    """Write to activity log."""
+    WorkerLog.log_entry(INSTANCE_ID, statement, value, activity_type)
 
 
 def main():
@@ -75,56 +60,48 @@ def checking_for_jobs():
     """
     SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
                                   AWS_SECRET_ACCESS_KEY)
-    write_activity(SQSconn)
+    write_activity('SQS Connection', SQSconn, 'success')
     jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
-    write_activity(jobs_queue)
+    write_activity('Jobs queue', jobs_queue, 'success')
     while True:
         job_message = get_message(jobs_queue)
         if job_message:
             try:
                 job_attributes = get_attributes(job_message[0])
-                write_activity('{}'.format(job_attributes))
+                write_activity('Job attributes',
+                               job_attributes, 'success')
             except Exception as e:
-                write_activity('Attribute retrieval fail because {}'
-                               .format(e.message))
-                write_error('Attribute retrieval fail because {}'
-                            .format(e.message))
-                write_activity('Attribute retrieval traceback: {}'
-                               .format(sys.exc_info()))
-                write_error('Attribute retrieval traceback: {}'
-                            .format(sys.exc_info()))
+                write_activity('Attribute retrieval fail because',
+                               e.message, 'error')
+                write_activity('Attribute retrieval traceback',
+                               sys.exc_info(), 'error')
 
             try:
                 del_status = delete_message_from_handle(SQSconn,
                                                         jobs_queue,
                                                         job_message[0])
-                write_activity('Delete success = {}'.format(del_status))
+                write_activity('Delete status', del_status, 'success')
             except Exception as e:
-                write_activity('Delete success = {}'.format(del_status))
-                write_activity('Delete message fail because {}'
-                               .format(e.message))
-                write_error('Delete message fail because {}'.format(e.message))
-                write_activity('Delete traceback: {}'.format(sys.exc_info()))
-                write_error('Delete traceback: {}'.format(sys.exc_info()))
+                write_activity('Delete status', del_status, 'error')
+                write_activity('Delete message fail because ',
+                               e.message, 'error')
+                write_activity('Delete message traceback',
+                               sys.exc_info(), 'error')
 
             # Process full res images
             try:
                 proc_status = process(job_attributes)
-                write_activity('Job Process success = {}'
-                               .format(proc_status))
+                write_activity('Job process status', proc_status, 'success')
             except Exception as e:
                 # If processing fails, send message to pyramid to update db
-                write_activity('Job process success = {}'.format(False))
-                write_activity('Job process fail because {}'.format(e.message))
-                write_error('Job process fail because {}'.format(e.message))
-                write_activity('Job proceess traceback: {}'
-                               .format(sys.exc_info()))
-                write_error('Job process traceback: {}'.format(sys.exc_info()))
+                write_activity('Job process success', False, 'error')
+                write_activity('Job process fail because',
+                               e.message, 'error')
+                write_activity('Job proceess traceback',
+                               sys.exc_info(), 'error')
                 cleanup_status = cleanup_downloads(PATH_DOWNLOAD)
-                write_activity('Cleanup downloads success = {}'
-                               .format(cleanup_status))
-                write_error('Cleanup downloads success = {}'
-                            .format(cleanup_status))
+                write_activity('Cleanup downloads success',
+                               cleanup_status, 'error')
                 UserJob_Model.set_job_status(job_attributes['job_id'], 10)
 
 
