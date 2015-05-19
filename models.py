@@ -36,7 +36,7 @@ class WorkerLog(Base):
         current_time = datetime.utcnow()
         entry = WorkerLog(instanceid=instanceid,
                           date_time=current_time,
-                          statement=value,
+                          statement=statement,
                           value=value,
                           activitytype=activity_type)
         DBSession.add(entry)
