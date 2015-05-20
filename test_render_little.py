@@ -73,6 +73,20 @@ class JobFactory(factory.alchemy.SQLAlchemyModelFactory):
     jobid = factory.Sequence(lambda n: n)
 
 
+@pytest.mark.usefixtures("connection", "db_session")
+class LogFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta():
+        model = models.WorkerLog
+
+        sqlalchemy_session = db_session
+
+    id = factory.Sequence(lambda n: n)
+    instanceid = u'i-6b62f69d'
+    date_time = datetime.utcnow()
+    statement = u'Test'
+    value = u'True'
+
+
 @pytest.fixture(scope='class')
 def fake_job1(db_session):
     model_instance = models.UserJob_Model(
