@@ -73,6 +73,20 @@ class JobFactory(factory.alchemy.SQLAlchemyModelFactory):
     jobid = factory.Sequence(lambda n: n)
 
 
+@pytest.mark.usefixtures("connection", "db_session")
+class LogFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta():
+        model = models.WorkerLog
+
+        sqlalchemy_session = db_session
+
+    id = factory.Sequence(lambda n: n)
+    instanceid = u'i-6b62f69d'
+    date_time = datetime.utcnow()
+    statement = u'Test'
+    value = u'True'
+
+
 @pytest.fixture(scope='class')
 def fake_job1(db_session):
     model_instance = models.UserJob_Model(
@@ -84,30 +98,30 @@ def fake_job1(db_session):
     db_session.flush()
 
 
-@pytest.fixture()
-def write_activity_fix(monkeypatch, tmpdir):
-    if tmpdir.join('log').exists():
-        tmp_activity_log = tmpdir.join('log/tmp_act_log.txt')
-    else:
-        tmp_activity_log = tmpdir.mkdir('log').join('tmp_act_log.txt')
-    monkeypatch.setattr(render_little,
-                        'PATH_ACTIVITY_LOG',
-                        str(tmp_activity_log)
-                        )
-    return tmp_activity_log
+# @pytest.fixture()
+# def write_activity_fix(monkeypatch, tmpdir):
+#     if tmpdir.join('log').exists():
+#         tmp_activity_log = tmpdir.join('log/tmp_act_log.txt')
+#     else:
+#         tmp_activity_log = tmpdir.mkdir('log').join('tmp_act_log.txt')
+#     monkeypatch.setattr(render_little,
+#                         'PATH_ACTIVITY_LOG',
+#                         str(tmp_activity_log)
+#                         )
+#     return tmp_activity_log
 
 
-@pytest.fixture()
-def write_error_fix(monkeypatch, tmpdir):
-    if tmpdir.join('log').exists():
-        tmp_error_log = tmpdir.join('log/tmp_error_log.txt')
-    else:
-        tmp_error_log = tmpdir.mkdir('log').join('tmp_error_log.txt')
-    monkeypatch.setattr(render_little,
-                        'PATH_ERROR_LOG',
-                        str(tmp_error_log)
-                        )
-    return tmp_error_log
+# @pytest.fixture()
+# def write_error_fix(monkeypatch, tmpdir):
+#     if tmpdir.join('log').exists():
+#         tmp_error_log = tmpdir.join('log/tmp_error_log.txt')
+#     else:
+#         tmp_error_log = tmpdir.mkdir('log').join('tmp_error_log.txt')
+#     monkeypatch.setattr(render_little,
+#                         'PATH_ERROR_LOG',
+#                         str(tmp_error_log)
+#                         )
+#     return tmp_error_log
 
 
 # --test db functionality tests
@@ -139,19 +153,18 @@ def test_cleanup_downloads():
     assert render_little.cleanup_downloads(test_dir)
 
 
-def test_write_activity(write_activity_fix):
-    render_little.write_activity('test message')
-    assert 'test message' in write_activity_fix.read()
+# def test_write_activity(write_activity_fix):
+#     render_little.write_activity('test message')
+#     assert 'test message' in write_activity_fix.read()
 
 
-def test_write_error(write_error_fix):
-    render_little.write_error('test message')
-    assert 'test message' in write_error_fix.read()
+# def test_write_error(write_error_fix):
+#     render_little.write_error('test message')
+#     assert 'test message' in write_error_fix.read()
 
 
 # --jobs queue
-@pytest.mark.usefixtures("connection", "db_session",
-                         "write_activity_fix", "write_error_fix")
+@pytest.mark.usefixtures("connection", "db_session")
 class TestQueue(unittest.TestCase):
 
     @pytest.fixture(autouse=True)
@@ -180,10 +193,10 @@ class TestQueue(unittest.TestCase):
         assert result == (
             {'job_id': 1, 'band_2': 3, 'band_3': 2, 'band_1': 4, 'scene_id': 'LC80470272015005LGN00', 'email': 'test@test.com'})
 
-    def test_get_job_attributes_logs_errors_correctly(self):
-        render_little.get_job_attributes(self.bad_fake_job)
-        assert "Attribute retrieval fail because" in str(self.tmpdir.join('log/tmp_act_log.txt').read())
-        assert "Attribute retrieval traceback" in str(self.tmpdir.join('log/tmp_error_log.txt').read())
+    # def test_get_job_attributes_logs_errors_correctly(self):
+    #     render_little.get_job_attributes(self.bad_fake_job)
+    #     assert "Attribute retrieval fail because" in str(self.tmpdir.join('log/tmp_act_log.txt').read())
+    #     assert "Attribute retrieval traceback" in str(self.tmpdir.join('log/tmp_error_log.txt').read())
 
 
 # --process tests
