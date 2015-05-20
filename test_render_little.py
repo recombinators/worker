@@ -164,8 +164,7 @@ def test_cleanup_downloads():
 
 
 # --jobs queue
-@pytest.mark.usefixtures("connection", "db_session",
-                         "write_activity_fix", "write_error_fix")
+@pytest.mark.usefixtures("connection", "db_session")
 class TestQueue(unittest.TestCase):
 
     @pytest.fixture(autouse=True)
@@ -194,10 +193,10 @@ class TestQueue(unittest.TestCase):
         assert result == (
             {'job_id': 1, 'band_2': 3, 'band_3': 2, 'band_1': 4, 'scene_id': 'LC80470272015005LGN00', 'email': 'test@test.com'})
 
-    def test_get_job_attributes_logs_errors_correctly(self):
-        render_little.get_job_attributes(self.bad_fake_job)
-        assert "Attribute retrieval fail because" in str(self.tmpdir.join('log/tmp_act_log.txt').read())
-        assert "Attribute retrieval traceback" in str(self.tmpdir.join('log/tmp_error_log.txt').read())
+    # def test_get_job_attributes_logs_errors_correctly(self):
+    #     render_little.get_job_attributes(self.bad_fake_job)
+    #     assert "Attribute retrieval fail because" in str(self.tmpdir.join('log/tmp_act_log.txt').read())
+    #     assert "Attribute retrieval traceback" in str(self.tmpdir.join('log/tmp_error_log.txt').read())
 
 
 # --process tests
