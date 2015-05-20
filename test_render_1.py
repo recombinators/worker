@@ -110,8 +110,8 @@ class TestProcess(unittest.TestCase):
         self.assertEqual(scene_id, 'LC80470272015005LGN00')
 
     @mock.patch('worker.render_1.Process')
-    def test_process_image(self, Process):
-        band_output, file_location = (render_1.process_image(
+    def test_merge_images(self, Process):
+        band_output, file_location = (render_1.merge_images(
             self.fake_job_message,
             self.test_input_path,
             self.test_bands,
