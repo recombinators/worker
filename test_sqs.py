@@ -92,7 +92,7 @@ def test_get_queue():
     assert COMPOSITE_QUEUE == sqs.get_queue(conns, COMPOSITE_QUEUE).name
 
 
-def test_build_result_message_message(job_message):
+def test_build_result_message_body(job_message):
     assert job_message['body'] == job_message['message']['body']
 
 
@@ -153,7 +153,7 @@ def test_get_message(job_message):
     conns.send_message(queue=queue,
                        message_content=job_message['message']['body'],
                        message_attributes=job_message['message']['attributes'])
-    message = queue.get_messages()
+    message = sqs.get_message(queue)
     assert len(message) == 1
 
 
