@@ -12,9 +12,9 @@ def make_SQS_connection(region_name, aws_access_key_id, aws_secret_access_key):
 
 
 def get_queue(conn, queue_name):
-    """Create a queue with the given name.
+    """Create a queue with the given name or get existing queue.
 
-    Or get an existing queue with that name from the AWS connection.
+    Pass in queue name and AWS SQS connection.
     """
     return conn.get_queue(queue_name)
 
@@ -23,9 +23,8 @@ def get_message(queue, num_messages=1, visibility_timeout=300,
                 wait_time_seconds=20):
     """Get a message from the given queue.
 
-    - Default visibility timeout is 5 minutes.
-    - Message wait time is 20 seconds.
-    - Number of messages is 1.
+    Default visibility timeout is 5 minutes, message wait time is 20 seconds,
+    number of messages is 1.
     """
     return queue.get_messages(visibility_timeout=visibility_timeout,
                               wait_time_seconds=wait_time_seconds,
@@ -74,30 +73,6 @@ def build_job_message(**kwargs):
             }
         }
     return job_message
-
-
-def build_result_message(**kwargs):
-    """Build a message to add to the results queue."""
-    result_message = {'body': 'result'}
-    result_message['attributes'] = {
-        'job_id': {
-            'data_type': 'Number',
-            'string_value': kwargs['job_id']
-            },
-        'email': {
-            'data_type': 'String',
-            'string_value': kwargs['email']
-            },
-        'link': {
-            'data_type': 'String',
-            'string_value': kwargs['link']
-            },
-        'scene_id': {
-            'data_type': 'String',
-            'string_value': kwargs['scene_id']
-            }
-        }
-    return result_message
 
 
 def send_message(conn, queue, message_content, message_attributes=None):
