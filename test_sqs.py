@@ -40,39 +40,6 @@ def job_message():
             'message': message}
 
 
-# @mock_sqs
-# @pytest.fixture(scope='function')
-# def conns():
-#     conns = boto.sqs.connect_to_region(REGION,
-#                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-#                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-#     return conns
-
-
-# @mock_sqs
-# @pytest.fixture(scope='function')
-# def queue():
-#     conns = boto.sqs.connect_to_region(REGION,
-#                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-#                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-#     queue = conns.create_queue(COMPOSITE_QUEUE)
-#     return conns, queue
-
-
-# @mock_sqs
-# @pytest.fixture(scope='function')
-# def qm(request, queue, job_message):
-#     queue[0].send_message(queue=queue[1],
-#                           message_content=job_message['message']['body'],
-#                           message_attributes=job_message['message']['attributes'])
-
-#     def fin():
-#         queue[0].purge_queue(queue[1])
-
-#     request.addfinalizer(fin)
-#     return queue[1]
-
-
 @mock_sqs
 def test_make_SQS_connection():
     """Tests make_SQS_connection method."""
