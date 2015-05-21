@@ -1,4 +1,3 @@
-import sys
 from landsat.downloader import Downloader
 from landsat.landsat import Process
 from boto.s3.key import Key

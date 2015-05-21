@@ -1,4 +1,3 @@
-import sys
 import pytest
 import render_1
 import models
@@ -9,7 +8,7 @@ import unittest
 import os
 import factory
 import factory.alchemy
-from models import RenderCache_Model, UserJob_Model
+from models import UserJob_Model
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -35,22 +34,22 @@ def db_session(request, connection):
     return DBSession
 
 
-@pytest.mark.usefixtures("connection", "db_session")
-class JobFactory(factory.alchemy.SQLAlchemyModelFactory):
-    class Meta():
-        model = models.UserJob_Model
+# @pytest.mark.usefixtures("connection", "db_session")
+# class JobFactory(factory.alchemy.SQLAlchemyModelFactory):
+#     class Meta():
+#         model = models.UserJob_Model
 
-        sqlalchemy_session = db_session
+#         sqlalchemy_session = db_session
 
-    jobstatus = 0
-    starttime = datetime.utcnow()
-    lastmodified = datetime.utcnow()
-    band1 = u'4'
-    band2 = u'3'
-    band3 = u'2'
-    entityid = u'LC80470272015005LGN00'
-    email = u'test@test.com'
-    jobid = factory.Sequence(lambda n: n)
+#     jobstatus = 0
+#     starttime = datetime.utcnow()
+#     lastmodified = datetime.utcnow()
+#     band1 = u'4'
+#     band2 = u'3'
+#     band3 = u'2'
+#     entityid = u'LC80470272015005LGN00'
+#     email = u'test@test.com'
+#     jobid = factory.Sequence(lambda n: n)
 
 
 @pytest.fixture(scope='class')

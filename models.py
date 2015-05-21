@@ -59,20 +59,20 @@ class RenderCache_Model(Base):
     rendercount = Column(Integer, default=0)
     currentlyrend = Column(Boolean)
 
-    @classmethod
-    def add(cls, jobid, currentlyrend):
-        """
-        Method adds entry into db given jobid and optional url.
-        """
-        jobQuery = DBSession.query(UserJob_Model).get(jobid)
-        job = RenderCache_Model(entityid=jobQuery.entityid,
-                                jobid=jobid,
-                                band1=jobQuery.band1,
-                                band2=jobQuery.band2,
-                                band3=jobQuery.band3,
-                                currentlyrend=currentlyrend)
-        DBSession.add(job)
-        transaction.commit()
+#     @classmethod
+#     def add(cls, jobid, currentlyrend):
+#         """
+#         Method adds entry into db given jobid and optional url.
+#         """
+#         jobQuery = DBSession.query(UserJob_Model).get(jobid)
+#         job = RenderCache_Model(entityid=jobQuery.entityid,
+#                                 jobid=jobid,
+#                                 band1=jobQuery.band1,
+#                                 band2=jobQuery.band2,
+#                                 band3=jobQuery.band3,
+#                                 currentlyrend=currentlyrend)
+#         DBSession.add(job)
+#         transaction.commit()
 
     @classmethod
     def update(cls, jobid, currentlyrend, renderurl):
@@ -86,35 +86,35 @@ class RenderCache_Model(Base):
         except:
             print 'Could not update database.'
 
-    @classmethod
-    def update_p_url(cls, scene, band1, band2, band3, previewurl):
-        """
-        Method updates entry into db with preview url.
-        """
-        # Convert parameters into correct type
-        band1, band2, band3 = int(band1), int(band2), int(band3)
-        previewurl = u'{}'.format(previewurl)
-        try:
-            entry = DBSession.query(cls).filter(cls.entityid == scene,
-                                                cls.band1 == band1,
-                                                cls.band2 == band2,
-                                                cls.band3 == band3).first()
-            # update entry if already exists,
-            # if there is no existing entry, add it.
-            if entry:
-                entry.update({"previewurl": previewurl})
-                transaction.commit()
-            else:
-                new = RenderCache_Model(entityid=scene,
-                                        band1=band1,
-                                        band2=band2,
-                                        band3=band3,
-                                        previewurl=previewurl
-                                        )
-                DBSession.add(new)
-                transaction.commit()
-        except:
-            print 'Could not add the preview URL to the database.'
+    # @classmethod
+    # def update_p_url(cls, scene, band1, band2, band3, previewurl):
+    #     """
+    #     Method updates entry into db with preview url.
+    #     """
+    #     # Convert parameters into correct type
+    #     band1, band2, band3 = int(band1), int(band2), int(band3)
+    #     previewurl = u'{}'.format(previewurl)
+    #     try:
+    #         entry = DBSession.query(cls).filter(cls.entityid == scene,
+    #                                             cls.band1 == band1,
+    #                                             cls.band2 == band2,
+    #                                             cls.band3 == band3).first()
+    #         # update entry if already exists,
+    #         # if there is no existing entry, add it.
+    #         if entry:
+    #             entry.update({"previewurl": previewurl})
+    #             transaction.commit()
+    #         else:
+    #             new = RenderCache_Model(entityid=scene,
+    #                                     band1=band1,
+    #                                     band2=band2,
+    #                                     band3=band3,
+    #                                     previewurl=previewurl
+    #                                     )
+    #             DBSession.add(new)
+    #             transaction.commit()
+    #     except:
+    #         print 'Could not add the preview URL to the database.'
 
 
 class UserJob_Model(Base):
@@ -149,46 +149,46 @@ class UserJob_Model(Base):
     rendertype = Column(UnicodeText)
     workerinstanceid = Column(UnicodeText)
 
-    @classmethod
-    def new_job(cls,
-                entityid=entityid,
-                band1=4,
-                band2=3,
-                band3=2,
-                jobstatus=0,
-                starttime=datetime.utcnow(),
-                rendertype=None
-                ):
-        """
-        Create a new job in the database.
-        """
-        try:
-            session = DBSession
-            current_time = datetime.utcnow()
-            job = UserJob_Model(entityid=entityid,
-                                band1=band1,
-                                band2=band2,
-                                band3=band3,
-                                jobstatus=0,
-                                starttime=current_time,
-                                lastmodified=current_time,
-                                rendertype=rendertype
-                                )
-            session.add(job)
-            session.flush()
-            session.refresh(job)
-            pk = job.jobid
-            transaction.commit()
-            # could do this or a subtransacation, ie open a transaction at the
-            # beginning of this method.
-            transaction.begin()
-        except:
-            return None
-        try:
-            RenderCache_Model.add(pk, True)
-        except:
-            print 'Could not add job to rendered db'
-        return pk
+    # @classmethod
+    # def new_job(cls,
+    #             entityid=entityid,
+    #             band1=4,
+    #             band2=3,
+    #             band3=2,
+    #             jobstatus=0,
+    #             starttime=datetime.utcnow(),
+    #             rendertype=None
+    #             ):
+    #     """
+    #     Create a new job in the database.
+    #     """
+    #     try:
+    #         session = DBSession
+    #         current_time = datetime.utcnow()
+    #         job = UserJob_Model(entityid=entityid,
+    #                             band1=band1,
+    #                             band2=band2,
+    #                             band3=band3,
+    #                             jobstatus=0,
+    #                             starttime=current_time,
+    #                             lastmodified=current_time,
+    #                             rendertype=rendertype
+    #                             )
+    #         session.add(job)
+    #         session.flush()
+    #         session.refresh(job)
+    #         pk = job.jobid
+    #         transaction.commit()
+    #         # could do this or a subtransacation, ie open a transaction at the
+    #         # beginning of this method.
+    #         transaction.begin()
+    #     except:
+    #         return None
+    #     try:
+    #         RenderCache_Model.add(pk, True)
+    #     except:
+    #         print 'Could not add job to rendered db'
+    #     return pk
 
     @classmethod
     def set_job_status(cls, jobid, status, url=None):
