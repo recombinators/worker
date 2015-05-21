@@ -1,13 +1,11 @@
 import pytest
-import models
 import sqs
-import os
-from sqlalchemy import create_engine
 from moto import mock_sqs
+import boto
 
 # Define AWS credentials
-AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
-AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
+AWS_ACCESS_KEY_ID = 'the_key'
+AWS_SECRET_ACCESS_KEY = 'the_secret'
 REGION = 'us-west-2'
 
 # Requests are passed into appropriate queues, as defined here.
@@ -15,47 +13,8 @@ COMPOSITE_QUEUE = 'composite_test'
 PREVIEW_QUEUE = 'preview_test'
 
 
-####################
-# fixtures
-@pytest.fixture(scope='session', autouse=True)
-def connection(request):
-    engine = create_engine('postgresql://postgres@/test_bar')
-    models.Base.metadata.create_all(engine)
-    connection = engine.connect()
-    models.DBSession.registry.clear()
-    models.DBSession.configure(bind=connection)
-    models.Base.metadata.bind = engine
-    request.addfinalizer(models.Base.metadata.drop_all)
-    return connection
-
-
-@pytest.fixture(autouse=True)
-def db_session(request, connection):
-    from transaction import abort
-    trans = connection.begin()
-    request.addfinalizer(trans.rollback)
-    request.addfinalizer(abort)
-
-    from models import DBSession
-    return DBSession
-
-
 ###################
 # method tests
-
-@mock_sqs
-@pytest.fixture(scope='class')
-def conns():
-    return sqs.make_SQS_connection(REGION,
-                                   AWS_ACCESS_KEY_ID,
-                                   AWS_SECRET_ACCESS_KEY)
-
-
-@mock_sqs
-@pytest.fixture(scope='class')
-def queue(conns):
-    return sqs.get_queue(conns, COMPOSITE_QUEUE)
-
 
 @pytest.fixture(scope='class')
 def job_message():
@@ -80,34 +39,57 @@ def job_message():
             'band3': band3,
             'message': message}
 
-# class Fake_Job_Class():
-#     def __init__(self, message_content, message_attributes):
-#         self.message_content = message_content
-#         self.message_attributes = message_attributes
 
-# message = {'job_id': {'string_value': 1, 'data_type': 'Number'},
-#            'band_2': {'string_value': 3, 'data_type': 'Number'},
-#            'band_3': {'string_value': 2, 'data_type': 'Number'},
-#            'band_1': {'string_value': 4, 'data_type': 'Number'},
-#            'scene_id': {'string_value': 'LC80470272015005LGN00',
-#            'data_type': 'String'},
-#            'email': {'string_value': 'test@test.com',
-#                      'data_type': 'String'}}
-
-# fake_job_for_queue = [Fake_Job_Class("job", message)]
-# bad_fake_job = [Fake_Job_Class("job", ['test'])]
+# @mock_sqs
+# @pytest.fixture(scope='function')
+# def conns():
+#     conns = boto.sqs.connect_to_region(REGION,
+#                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
+#                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+#     return conns
 
 
-def test_make_SQS_connection(conns):
+# @mock_sqs
+# @pytest.fixture(scope='function')
+# def queue():
+#     conns = boto.sqs.connect_to_region(REGION,
+#                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
+#                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+#     queue = conns.create_queue(COMPOSITE_QUEUE)
+#     return conns, queue
+
+
+# @mock_sqs
+# @pytest.fixture(scope='function')
+# def qm(request, queue, job_message):
+#     queue[0].send_message(queue=queue[1],
+#                           message_content=job_message['message']['body'],
+#                           message_attributes=job_message['message']['attributes'])
+
+#     def fin():
+#         queue[0].purge_queue(queue[1])
+
+#     request.addfinalizer(fin)
+#     return queue[1]
+
+
+@mock_sqs
+def test_make_SQS_connection():
     """Tests make_SQS_connection method."""
-    assert COMPOSITE_QUEUE in [i.name for i in conns.get_all_queues()]
-    assert PREVIEW_QUEUE in [i.name for i in conns.get_all_queues()]
+    conns = sqs.make_SQS_connection(REGION,
+                                    AWS_ACCESS_KEY_ID,
+                                    AWS_SECRET_ACCESS_KEY)
+    assert conns.server_name() == 'us-west-2.queue.amazonaws.com'
 
 
-def test_get_queue(conns):
+@mock_sqs
+def test_get_queue():
     """Tests get_queue method."""
+    conns = boto.sqs.connect_to_region(REGION,
+                                       aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                       aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    conns.create_queue(COMPOSITE_QUEUE)
     assert COMPOSITE_QUEUE == sqs.get_queue(conns, COMPOSITE_QUEUE).name
-    assert PREVIEW_QUEUE == sqs.get_queue(conns, PREVIEW_QUEUE).name
 
 
 def test_build_result_message_message(job_message):
@@ -139,54 +121,122 @@ def test_build_result_message_attributes_band3(job_message):
     assert job_message['band3'] == job_message['message']['attributes']['band_3']['string_value']
 
 
-def test_send_message(conns, queue, job_message):
+@mock_sqs
+def test_send_message(job_message):
+    conns = boto.sqs.connect_to_region(REGION,
+                                       aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                       aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    queue = conns.create_queue(COMPOSITE_QUEUE)
+    start = queue.count()
     sqs.send_message(conns,
                      queue,
                      job_message['message']['body'],
                      job_message['message']['attributes'])
-    assert queue.count() == 1
+    assert queue.count() - start == 1
 
 
-def test_queue_size(queue):
-    assert sqs.queue_size(queue) == 1
+@mock_sqs
+def test_queue_size():
+    conns = boto.sqs.connect_to_region(REGION,
+                                       aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                       aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    queue = conns.create_queue(COMPOSITE_QUEUE)
+    assert sqs.queue_size(queue) == queue.count()
 
 
-def test_get_message(queue):
-    message = sqs.get_message(queue, visibility_timeout=0)
+@mock_sqs
+def test_get_message(job_message):
+    conns = boto.sqs.connect_to_region(REGION,
+                                       aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                       aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    queue = conns.create_queue(COMPOSITE_QUEUE)
+    conns.send_message(queue=queue,
+                       message_content=job_message['message']['body'],
+                       message_attributes=job_message['message']['attributes'])
+    message = queue.get_messages()
     assert len(message) == 1
 
 
-def test_get_attributes_jobid(job_message, queue):
-    message = sqs.get_message(queue, visibility_timeout=0)
-    attrs = sqs.get_attributes(message)
+@mock_sqs
+def test_get_attributes_jobid(job_message):
+    conns = boto.sqs.connect_to_region(REGION,
+                                       aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                       aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    queue = conns.create_queue(COMPOSITE_QUEUE)
+    conns.send_message(queue=queue,
+                       message_content=job_message['message']['body'],
+                       message_attributes=job_message['message']['attributes'])
+    message = queue.get_messages()
+    attrs = sqs.get_attributes(message[0])
     assert job_message['jobid'] == int(attrs['job_id'])
 
 
-def test_get_attributes_sceneid(job_message, queue):
-    message = sqs.get_message(queue, visibility_timeout=0)
-    attrs = sqs.get_attributes(message)
+@mock_sqs
+def test_get_attributes_sceneid(job_message):
+    conns = boto.sqs.connect_to_region(REGION,
+                                       aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                       aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    queue = conns.create_queue(COMPOSITE_QUEUE)
+    conns.send_message(queue=queue,
+                       message_content=job_message['message']['body'],
+                       message_attributes=job_message['message']['attributes'])
+    message = queue.get_messages()
+    attrs = sqs.get_attributes(message[0])
     assert job_message['scene'] == attrs['scene_id']
 
 
-def test_get_attributes_band1(job_message, queue):
-    message = sqs.get_message(queue, visibility_timeout=0)
-    attrs = sqs.get_attributes(message)
+@mock_sqs
+def test_get_attributes_band1(job_message):
+    conns = boto.sqs.connect_to_region(REGION,
+                                       aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                       aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    queue = conns.create_queue(COMPOSITE_QUEUE)
+    conns.send_message(queue=queue,
+                       message_content=job_message['message']['body'],
+                       message_attributes=job_message['message']['attributes'])
+    message = queue.get_messages()
+    attrs = sqs.get_attributes(message[0])
     assert job_message['band1'] == int(attrs['band_1'])
 
 
-def test_get_attributes_band2(job_message, queue):
-    message = sqs.get_message(queue, visibility_timeout=0)
-    attrs = sqs.get_attributes(message)
+@mock_sqs
+def test_get_attributes_band2(job_message):
+    conns = boto.sqs.connect_to_region(REGION,
+                                       aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                       aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    queue = conns.create_queue(COMPOSITE_QUEUE)
+    conns.send_message(queue=queue,
+                       message_content=job_message['message']['body'],
+                       message_attributes=job_message['message']['attributes'])
+    message = queue.get_messages()
+    attrs = sqs.get_attributes(message[0])
     assert job_message['band2'] == int(attrs['band_2'])
 
 
-def test_get_attributes_band3(job_message, queue):
-    message = sqs.get_message(queue, visibility_timeout=0)
-    attrs = sqs.get_attributes(message)
+@mock_sqs
+def test_get_attributes_band3(job_message):
+    conns = boto.sqs.connect_to_region(REGION,
+                                       aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                       aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    queue = conns.create_queue(COMPOSITE_QUEUE)
+    conns.send_message(queue=queue,
+                       message_content=job_message['message']['body'],
+                       message_attributes=job_message['message']['attributes'])
+    message = queue.get_messages()
+    attrs = sqs.get_attributes(message[0])
     assert job_message['band3'] == int(attrs['band_3'])
 
 
-def test_delete_message_from_handle(conns, queue):
-    message = sqs.get_message(queue, visibility_timeout=0)
+@mock_sqs
+def test_delete_message_from_handle(job_message):
+    conns = boto.sqs.connect_to_region(REGION,
+                                       aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                       aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    queue = conns.create_queue(COMPOSITE_QUEUE)
+    conns.send_message(queue=queue,
+                       message_content=job_message['message']['body'],
+                       message_attributes=job_message['message']['attributes'])
+    start = queue.count()
+    message = queue.get_messages()
     sqs.delete_message_from_handle(conns, queue, message[0])
-    assert queue.count() == 0
+    assert start - queue.count() == 1
