@@ -12,7 +12,12 @@ from boto import utils
 import socket
 from sqs import (make_SQS_connection, get_queue, get_message, get_attributes,
                  delete_message_from_handle)
-
+from worker import (PATH_DOWNLOAD, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
+                    PREVIEW_QUEUE, REGION, INSTANCE_ID)
+from worker import (cleanup_downloads, write_activity, checking_for_jobs,
+                    get_job_attributes, delete_job_from_queue, process_image,
+                    download_and_set_preview, resize_bands, remove_and_rename,
+                    merge_images_preview)
 
 PATH_DOWNLOAD = os.getcwd() + '/download'
 
