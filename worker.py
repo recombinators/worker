@@ -165,6 +165,7 @@ def name_files(bands, input_path, scene_id, rendertype):
         file_location = os.path.join(input_path, file_name)
         return band_output, file_location
 
+
 def upload_to_s3(file_location, file_png, job):
     """Upload the processed file to S3, update job database"""
     try:
@@ -185,6 +186,15 @@ def upload_to_s3(file_location, file_png, job):
         UserJob_Model.set_job_status(job['job_id'], 5, out)
     except:
         raise Exception('S3 Upload failed')
+
+
+def delete_files(input_path):
+    """Remove leftover files when we are done with them."""
+    try:
+        rmtree(input_path)
+    except OSError:
+        print input_path
+        print 'error deleting files'
 
 ############################
 # full
