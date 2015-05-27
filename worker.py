@@ -165,6 +165,27 @@ def name_files(bands, input_path, scene_id, rendertype):
         file_location = os.path.join(input_path, file_name)
         return band_output, file_location
 
+def upload_to_s3(file_location, file_png, job):
+    """Upload the processed file to S3, update job database"""
+    try:
+        print 'Uploading to S3'
+        UserJob_Model.set_job_status(job['job_id'], 4)
+        conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        b = conne.get_bucket(BUCKET)
+        k = Key(b)
+        k.key = file_png
+        k.set_contents_from_filename(file_location)
+        k.get_contents_to_filename(file_location)
+        hello = b.get_key(file_png)
+        # make public
+        hello.set_canned_acl('public-read')
+        out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
+        print out
+        UserJob_Model.set_job_status(job['job_id'], 5, out)
+    except:
+        raise Exception('S3 Upload failed')
+
 ############################
 # full
 ############################
