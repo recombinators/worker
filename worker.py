@@ -212,7 +212,9 @@ def zip_file(job, band_output, scene_id, input_path, file_location):
     path_to_zip = os.path.join(input_path, file_name_zip)
     with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
         myzip.write(file_location, arcname=file_name)
-    return file_name_zip
+
+    file_location = os.path.join(input_path, file_name_zip)
+    return file_location
 
 
 def upload_to_s3(file_location, file_name_zip, input_path, job):
