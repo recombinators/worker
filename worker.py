@@ -57,13 +57,13 @@ def checking_for_jobs(rendertype):
             delete_job_from_queue(SQSconn, job_message, jobs_queue)
 
             # Process full res images
-            process_job(job_attributes)
+            process_job(job_attributes, rendertype)
 
 
-def process_job(job_attributes):
+def process_job(job_attributes, rendertype):
     """Begin the image processing and log the results."""
     try:
-        proc_status = process(job_attributes)
+        proc_status = process(job_attributes, rendertype)
         write_activity('Job process status',
                        unicode(proc_status), 'success')
     except Exception as e:
@@ -77,6 +77,94 @@ def process_job(job_attributes):
         write_activity('Cleanup downloads success',
                        cleanup_status, 'error')
         UserJob_Model.set_job_status(job_attributes['job_id'], 10)
+
+
+def process(job_attributes, rendertype):
+    """Given bands and sceneID, download, image process, zip & upload to S3."""
+    # set worker instance id for job
+    UserJob_Model.set_worker_instance_id(job_attributes['job_id'], INSTANCE_ID)
+
+    # download and set vars
+    bands, input_path, scene_id = download_and_set(job_attributes)
+
+    if rendertype == 'preview':
+        # resize bands
+        delete_me, rename_me = resize_bands(bands, input_path, scene_id)
+
+        # remove original band files and rename downsized to correct name
+        remove_and_rename(delete_me, rename_me)
+
+        # call landsat-util to merge images
+        merge_images(input_path, bands)
+
+        # construct the file names
+        file_location, file_name, file_tif = name_files(bands,
+                                                        input_path,
+                                                        scene_id)
+
+        # convert from TIF to png
+        file_png = tif_to_png(file_location, file_name, file_tif)
+
+        # upload to s3
+        upload_to_s3(file_location, file_png, job_attributes)
+
+        # delete files
+        delete_files(input_path)
+
+    elif rendertype == 'full':
+       # zip file, maintain location
+        file_name_zip = zip_file(job_attributes, band_output, scene_id, input_path,
+                             file_location) 
+    
+    # call landsat-util to merge images
+    merge_images(input_path, bands)
+
+    # construct the file names
+    file_location, file_name, file_tif = name_files(bands,
+                                                    input_path,
+                                                    scene_id)
+
+    # convert from TIF to png
+    file_png = tif_to_png(file_location, file_name, file_tif)
+
+    # upload to s3
+    upload_to_s3(file_location, file_png, job)
+
+    # delete files
+    delete_files(input_path)
+
+    return True
+
+
+def download_and_set(job):
+    """Download 3 band files for the given sceneid"""
+    # set worker instance id for job
+    scene_id = str(job['scene_id'])
+    input_path = os.path.join(PATH_DOWNLOAD, scene_id)
+    # Create a subdirectory
+    if not os.path.exists(input_path):
+        os.makedirs(input_path)
+        print 'Directory created.'
+
+    try:
+        b = Downloader(verbose=False, download_dir=PATH_DOWNLOAD)
+        bands = [job['band_1'], job['band_2'], job['band_3']]
+        b.download([scene_id], bands)
+        print 'Finished downloading.'
+    except:
+        raise Exception('Download failed')
+    return bands, input_path, scene_id
+
+
+def merge_images(job, input_path, bands):
+    """Combine the 3 bands into 1 color image"""
+    UserJob_Model.set_job_status(job['job_id'], 2)
+    try:
+        processor = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD,
+                            verbose=False)
+        processor.run(pansharpen=False)
+    except:
+        raise Exception('Processing/landsat-util failed')
 
 
 def cleanup_downloads(folder_path):
@@ -127,37 +215,6 @@ def delete_job_from_queue(SQSconn, job_message, jobs_queue):
                        e.message, 'error')
 
 
-def download_and_set(job):
-    """Download 3 band files for the given sceneid"""
-    # set worker instance id for job
-    scene_id = str(job['scene_id'])
-    input_path = os.path.join(PATH_DOWNLOAD, scene_id)
-    # Create a subdirectory
-    if not os.path.exists(input_path):
-        os.makedirs(input_path)
-        print 'Directory created.'
-
-    try:
-        b = Downloader(verbose=False, download_dir=PATH_DOWNLOAD)
-        bands = [job['band_1'], job['band_2'], job['band_3']]
-        b.download([scene_id], bands)
-        print 'Finished downloading.'
-    except:
-        raise Exception('Download failed')
-    return bands, input_path, scene_id
-
-
-def merge_images(job, input_path, bands):
-    """Combine the 3 bands into 1 color image"""
-    UserJob_Model.set_job_status(job['job_id'], 2)
-    try:
-        processor = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD,
-                            verbose=False)
-        processor.run(pansharpen=False)
-    except:
-        raise Exception('Processing/landsat-util failed')
-
-
 def name_files(bands, input_path, scene_id, rendertype):
     """Give filenames to files for each band """
     band_output = ''
@@ -204,40 +261,6 @@ def delete_files(input_path):
     except OSError:
         print input_path
         print 'error deleting files'
-
-
-def process(job):
-    """Given bands and sceneID, download, image process, zip & upload to S3."""
-    # set worker instance id for job
-    UserJob_Model.set_worker_instance_id(job['job_id'], INSTANCE_ID)
-
-    # download and set vars
-    bands, input_path, scene_id = download_and_set(job)
-
-    # resize bands
-    delete_me, rename_me = resize_bands(bands, input_path, scene_id)
-
-    # remove original band files and rename downsized to correct name
-    remove_and_rename(delete_me, rename_me)
-
-    # call landsat-util to merge images
-    merge_images(input_path, bands)
-
-    # construct the file names
-    file_location, file_name, file_tif = name_files(bands,
-                                                    input_path,
-                                                    scene_id)
-
-    # convert from TIF to png
-    file_png = tif_to_png(file_location, file_name, file_tif)
-
-    # upload to s3
-    upload_to_s3(file_location, file_png, job)
-
-    # delete files
-    delete_files(input_path)
-
-    return True
 
 
 ############################
