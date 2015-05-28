@@ -103,35 +103,25 @@ def process(job_attributes, rendertype):
                                                         scene_id)
 
         # convert from TIF to png
-        file_png = tif_to_png(file_location, file_name, file_tif)
-
-        # upload to s3
-        upload_to_s3(file_location, file_png, job_attributes)
-
-        # delete files
-        delete_files(input_path)
+        file_name_ext = tif_to_png(file_location, file_name, file_tif)
 
     elif rendertype == 'full':
-       # zip file, maintain location
-        file_name_zip = zip_file(job_attributes, band_output, scene_id, input_path,
-                             file_location) 
-    
-    # call landsat-util to merge images
-    merge_images(input_path, bands)
+        # call landsat-util to merge images
+        band_output, file_location = merge_images(
+            job_attributes, input_path, bands, PATH_DOWNLOAD, scene_id)
 
-    # construct the file names
-    file_location, file_name, file_tif = name_files(bands,
-                                                    input_path,
-                                                    scene_id)
-
-    # convert from TIF to png
-    file_png = tif_to_png(file_location, file_name, file_tif)
+        # zip file, maintain location
+        file_name_ext, file_location = zip_file(job_attributes,
+                                                band_output,
+                                                scene_id,
+                                                input_path,
+                                                file_location)
 
     # upload to s3
-    upload_to_s3(file_location, file_png, job)
+        upload_to_s3(file_location, file_name_ext, job_attributes)
 
     # delete files
-    delete_files(input_path)
+        delete_files(input_path)
 
     return True
 
@@ -232,24 +222,24 @@ def name_files(bands, input_path, scene_id, rendertype):
         return band_output, file_location
 
 
-def upload_to_s3(file_location, file_png, job, BUCKET):
+def upload_to_s3(file_location, file_name_ext, job_attributes, BUCKET):
     """Upload the processed file to S3, update job database"""
     try:
         print 'Uploading to S3'
-        UserJob_Model.set_job_status(job['job_id'], 4)
+        UserJob_Model.set_job_status(job_attributes['job_id'], 4)
         conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
                                 aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         b = conne.get_bucket(BUCKET)
         k = Key(b)
-        k.key = file_png
+        k.key = file_name_ext
         k.set_contents_from_filename(file_location)
         k.get_contents_to_filename(file_location)
-        hello = b.get_key(file_png)
+        hello = b.get_key(file_name_ext)
         # make public
         hello.set_canned_acl('public-read')
         out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
         print out
-        UserJob_Model.set_job_status(job['job_id'], 5, out)
+        UserJob_Model.set_job_status(job_attributes['job_id'], 5, out)
     except:
         raise Exception('S3 Upload failed')
 
