@@ -1,4 +1,5 @@
 import os
+import sys
 import boto
 import subprocess
 import zipfile
@@ -34,6 +35,50 @@ except:
 ############################
 
 
+def checking_for_jobs(rendertype):
+    """Poll jobs queue for jobs."""
+
+    if rendertype == 'full':
+        JOBS_QUEUE = FULL_QUEUE
+        BUCKET = FULL_BUCKET
+    elif rendertype == 'preview':
+        JOBS_QUEUE = PREVIEW_QUEUE
+        BUCKET = PREVIEW_BUCKET
+
+    SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
+                                  AWS_SECRET_ACCESS_KEY)
+    write_activity('SQS Connection', SQSconn.server_name(), 'success')
+    jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
+    write_activity('Jobs queue', jobs_queue.name, 'success')
+    while True:
+        job_message = get_message(jobs_queue)
+        if job_message:
+            job_attributes = get_job_attributes(job_message)
+            delete_job_from_queue(SQSconn, job_message, jobs_queue)
+
+            # Process full res images
+            process_job(job_attributes)
+
+
+def process_job(job_attributes):
+    """Begin the image processing and log the results."""
+    try:
+        proc_status = process(job_attributes)
+        write_activity('Job process status',
+                       unicode(proc_status), 'success')
+    except Exception as e:
+        proc_status = False
+        # If processing fails, send message to pyramid to update db
+        write_activity('Job process success',
+                       unicode(proc_status), 'error')
+        write_activity('Job process fail because',
+                       e.message, 'error')
+        cleanup_status = cleanup_downloads(PATH_DOWNLOAD)
+        write_activity('Cleanup downloads success',
+                       cleanup_status, 'error')
+        UserJob_Model.set_job_status(job_attributes['job_id'], 10)
+
+
 def cleanup_downloads(folder_path):
     """Clean up download folder if process fails.
 
@@ -54,23 +99,6 @@ def cleanup_downloads(folder_path):
 def write_activity(statement, value, activity_type):
     """Write to activity log."""
     WorkerLog.log_entry(INSTANCE_ID, statement, value, activity_type)
-
-
-def checking_for_jobs(JOBS_QUEUE):
-    """Poll jobs queue for jobs."""
-    SQSconn = make_SQS_connection(REGION, AWS_ACCESS_KEY_ID,
-                                  AWS_SECRET_ACCESS_KEY)
-    write_activity('SQS Connection', SQSconn.server_name(), 'success')
-    jobs_queue = get_queue(SQSconn, JOBS_QUEUE)
-    write_activity('Jobs queue', jobs_queue.name, 'success')
-    while True:
-        job_message = get_message(jobs_queue)
-        if job_message:
-            job_attributes = get_job_attributes(job_message)
-            delete_job_from_queue(SQSconn, job_message, jobs_queue)
-
-            # Process full res images
-            process_image(job_attributes)
 
 
 def get_job_attributes(job_message):
@@ -97,25 +125,6 @@ def delete_job_from_queue(SQSconn, job_message, jobs_queue):
         write_activity('Delete status', unicode(del_status), 'error')
         write_activity('Delete message fail because ',
                        e.message, 'error')
-
-
-def process_image(job_attributes):
-    """Begin the image processing and log the results."""
-    try:
-        proc_status = process(job_attributes)
-        write_activity('Job process status',
-                       unicode(proc_status), 'success')
-    except Exception as e:
-        proc_status = False
-        # If processing fails, send message to pyramid to update db
-        write_activity('Job process success',
-                       unicode(proc_status), 'error')
-        write_activity('Job process fail because',
-                       e.message, 'error')
-        cleanup_status = cleanup_downloads(PATH_DOWNLOAD)
-        write_activity('Cleanup downloads success',
-                       cleanup_status, 'error')
-        UserJob_Model.set_job_status(job_attributes['job_id'], 10)
 
 
 def download_and_set(job):
@@ -166,7 +175,7 @@ def name_files(bands, input_path, scene_id, rendertype):
         return band_output, file_location
 
 
-def upload_to_s3(file_location, file_png, job):
+def upload_to_s3(file_location, file_png, job, BUCKET):
     """Upload the processed file to S3, update job database"""
     try:
         print 'Uploading to S3'
@@ -195,6 +204,41 @@ def delete_files(input_path):
     except OSError:
         print input_path
         print 'error deleting files'
+
+
+def process(job):
+    """Given bands and sceneID, download, image process, zip & upload to S3."""
+    # set worker instance id for job
+    UserJob_Model.set_worker_instance_id(job['job_id'], INSTANCE_ID)
+
+    # download and set vars
+    bands, input_path, scene_id = download_and_set(job)
+
+    # resize bands
+    delete_me, rename_me = resize_bands(bands, input_path, scene_id)
+
+    # remove original band files and rename downsized to correct name
+    remove_and_rename(delete_me, rename_me)
+
+    # call landsat-util to merge images
+    merge_images(input_path, bands)
+
+    # construct the file names
+    file_location, file_name, file_tif = name_files(bands,
+                                                    input_path,
+                                                    scene_id)
+
+    # convert from TIF to png
+    file_png = tif_to_png(file_location, file_name, file_tif)
+
+    # upload to s3
+    upload_to_s3(file_location, file_png, job)
+
+    # delete files
+    delete_files(input_path)
+
+    return True
+
 
 ############################
 # full
@@ -253,4 +297,4 @@ def tif_to_png(file_location, file_name, file_tif):
     return file_png
 
 if __name__ == '__main__':
-    checking_for_jobs()
+    checking_for_jobs(sys.argv[1])
