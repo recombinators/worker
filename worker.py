@@ -89,18 +89,22 @@ def process(job_attributes, BUCKET, rendertype):
 
     if rendertype == 'preview':
         # resize bands
-        delete_me, rename_me = resize_bands(bands, input_path, scene_id)
+        delete_me, rename_me = resize_bands(job_attributes,
+                                            bands,
+                                            input_path,
+                                            scene_id)
 
         # remove original band files and rename downsized to correct name
         remove_and_rename(delete_me, rename_me)
 
         # call landsat-util to merge images
-        merge_images(input_path, bands)
+        merge_images(job_attributes, input_path, bands)
 
         # construct the file names
         file_name, path_to_tif, path_to_png = name_files(bands,
                                                          input_path,
-                                                         scene_id)
+                                                         scene_id,
+                                                         rendertype)
 
         # convert from TIF to png
         file_pre_png = tif_to_png(path_to_tif, path_to_png, file_name)
@@ -115,7 +119,8 @@ def process(job_attributes, BUCKET, rendertype):
         # construct the file names
         file_location, file_name, file_tif = name_files(bands,
                                                         input_path,
-                                                        scene_id)
+                                                        scene_id,
+                                                        rendertype)
 
         # zip file, maintain location
         file_zip, file_location = zip_file(job_attributes,
@@ -135,10 +140,10 @@ def process(job_attributes, BUCKET, rendertype):
     return True
 
 
-def download_and_set(job):
+def download_and_set(job_attributes):
     """Download 3 band files for the given sceneid"""
     # set worker instance id for job
-    scene_id = str(job['scene_id'])
+    scene_id = str(job_attributes['scene_id'])
     input_path = os.path.join(PATH_DOWNLOAD, scene_id)
     # Create a subdirectory
     if not os.path.exists(input_path):
@@ -146,8 +151,11 @@ def download_and_set(job):
         print 'Directory created.'
 
     try:
+        UserJob_Model.set_job_status(job_attributes['job_id'], 1)
         b = Downloader(verbose=False, download_dir=PATH_DOWNLOAD)
-        bands = [job['band_1'], job['band_2'], job['band_3']]
+        bands = [job_attributes['band_1'],
+                 job_attributes['band_2'],
+                 job_attributes['band_3']]
         b.download([scene_id], bands)
         print 'Finished downloading.'
     except:
@@ -155,9 +163,9 @@ def download_and_set(job):
     return bands, input_path, scene_id
 
 
-def merge_images(job, input_path, bands):
+def merge_images(job_attributes, input_path, bands):
     """Combine the 3 bands into 1 color image"""
-    UserJob_Model.set_job_status(job['job_id'], 2)
+    UserJob_Model.set_job_status(job_attributes['job_id'], 2)
     try:
         processor = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD,
                             verbose=False)
@@ -166,7 +174,7 @@ def merge_images(job, input_path, bands):
         raise Exception('Processing/landsat-util failed')
 
 
-def name_files(bands, input_path, scene_id):
+def name_files(bands, input_path, scene_id, rendertype):
     """Give filenames to files for each band """
     band_output = ''
     for i in bands:
@@ -175,14 +183,16 @@ def name_files(bands, input_path, scene_id):
     file_name = '{}_bands_{}'.format(scene_id, band_output)
 
     file_tif = '{}.TIF'.format(file_name)
-    file_png = '{}.png'.format(file_name)
-    file_zip = '{}.zip'.format(file_name)
-
     path_to_tif = os.path.join(input_path, file_tif)
-    path_to_png = os.path.join(input_path, file_png)
-    path_to_zip = os.path.join(input_path, file_zip)
 
-    return file_name, path_to_tif, path_to_png
+    if rendertype == 'preview':
+        file_png = '{}.png'.format(file_name)
+        path_to_png = os.path.join(input_path, file_png)
+        return file_name, path_to_tif, path_to_png
+    elif rendertype == 'full':
+        file_zip = '{}.zip'.format(file_name)
+        path_to_zip = os.path.join(input_path, file_zip)
+        return file_name, path_to_tif, path_to_zip
 
 
 def cleanup_downloads(folder_path):
@@ -233,7 +243,7 @@ def delete_job_from_queue(SQSconn, job_message, jobs_queue):
                        e.message, 'error')
 
 
-def upload_to_s3(file_location, file_name_ext, job_attributes, BUCKET):
+def upload_to_s3(file_to_upload, file_upload_name, job_attributes, BUCKET):
     """Upload the processed file to S3, update job database"""
 
     try:
@@ -243,10 +253,10 @@ def upload_to_s3(file_location, file_name_ext, job_attributes, BUCKET):
                                 aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         b = conne.get_bucket(BUCKET)
         k = Key(b)
-        k.key = file_name_ext
-        k.set_contents_from_filename(file_location)
-        k.get_contents_to_filename(file_location)
-        hello = b.get_key(file_name_ext)
+        k.key = file_upload_name
+        k.set_contents_from_filename(file_to_upload)
+        k.get_contents_to_filename(file_to_upload)
+        hello = b.get_key(file_upload_name)
         # make public
         hello.set_canned_acl('public-read')
         out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
@@ -290,9 +300,9 @@ def zip_file(job, band_output, scene_id, input_path, file_location):
 # preview
 ############################
 
-def resize_bands(job, bands, input_path, scene_id):
+def resize_bands(job_attributes, bands, input_path, scene_id):
     """gdal resizes each band file and returns filenames to delete and rename"""
-    UserJob_Model.set_job_status(job['job_id'], 3)
+    UserJob_Model.set_job_status(job_attributes['job_id'], 3)
     delete_me, rename_me = [], []
     # Resize each band
     for band in bands:
