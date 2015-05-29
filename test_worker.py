@@ -318,23 +318,34 @@ class TestProcess(unittest.TestCase):
             worker.merge_images(self.fake_job_message, '', self.bad_test_bands)
         assert 'Processing/landsat-util failed' in str(e.value)
 
-    def test_name_files(self):
-        file_name, path_to_tif, path_to_png = (
+    def test_preview_name_files(self):
+        file_pre_png, path_to_tif, path_to_png = (
             worker.name_files(self.test_bands,
                               self.test_input_path,
                               self.test_scene_id,
                               self.test_rendertype_preview))
-        assert file_name == self.test_file_name
+        assert file_pre_png == self.test_file_pre_png
         assert path_to_tif == (
             self.test_input_path + '/' + self.test_file_tif)
         assert path_to_png == (
             self.test_input_path + '/' + self.test_file_png)
 
+    def test_full_name_files(self):
+        file_tif, path_to_tif, path_to_zip = (
+            worker.name_files(self.test_bands,
+                              self.test_input_path,
+                              self.test_scene_id,
+                              self.test_rendertype_full))
+        assert file_tif == self.test_file_tif
+        assert path_to_tif == (
+            self.test_input_path + '/' + self.test_file_tif)
+        assert path_to_zip == (
+            self.test_input_path + '/' + self.test_file_zip)
+
     @mock.patch('worker.worker.subprocess')
     def test_tif_to_png(self, mock_subp):
         file_pre_png = worker.tif_to_png(self.test_path_to_tif,
-                                         self.test_path_to_png,
-                                         self.test_file_name)
+                                         self.test_path_to_png)
         assert file_pre_png == self.test_file_pre_png
         mock_subp.call.assert_called_with(['convert',
                                            self.test_path_to_tif,

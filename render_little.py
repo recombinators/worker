@@ -23,6 +23,7 @@ from worker import (cleanup_downloads, write_activity, checking_for_jobs,
                     name_files)
 from worker import (resize_bands, remove_and_rename, tif_to_png)
 
+
 def upload_to_s3(file_location, file_png, job):
     """Upload the processed file to S3, update job database"""
     try:

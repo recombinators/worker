@@ -101,13 +101,13 @@ def process(job_attributes, BUCKET, rendertype):
         merge_images(job_attributes, input_path, bands)
 
         # construct the file names
-        file_name, path_to_tif, path_to_png = name_files(bands,
-                                                         input_path,
-                                                         scene_id,
-                                                         rendertype)
+        file_pre_png, path_to_tif, path_to_png = name_files(bands,
+                                                            input_path,
+                                                            scene_id,
+                                                            rendertype)
 
         # convert from TIF to png
-        file_pre_png = tif_to_png(path_to_tif, path_to_png, file_name)
+        tif_to_png(path_to_tif, path_to_png)
 
         file_upload_name = file_pre_png
         file_to_upload = path_to_png
@@ -117,17 +117,17 @@ def process(job_attributes, BUCKET, rendertype):
         merge_images(input_path, bands)
 
         # construct the file names
-        file_location, file_name, file_tif = name_files(bands,
+        file_tif, path_to_tif, path_to_zip = name_files(bands,
                                                         input_path,
                                                         scene_id,
                                                         rendertype)
 
         # zip file, maintain location
-        file_zip, file_location = zip_file(job_attributes,
-                                                band_output,
-                                                scene_id,
-                                                input_path,
-                                                file_location)
+        file_zip = zip_file(job_attributes,
+                            file_tif,
+                            path_to_tif,
+                            path_to_zip)
+
         file_upload_name = file_zip
         file_to_upload = path_to_zip
 
@@ -188,11 +188,12 @@ def name_files(bands, input_path, scene_id, rendertype):
     if rendertype == 'preview':
         file_png = '{}.png'.format(file_name)
         path_to_png = os.path.join(input_path, file_png)
-        return file_name, path_to_tif, path_to_png
+        file_pre_png = 'pre_{}.png'.format(file_name)
+        return file_pre_png, path_to_tif, path_to_png
     elif rendertype == 'full':
         file_zip = '{}.zip'.format(file_name)
         path_to_zip = os.path.join(input_path, file_zip)
-        return file_name, path_to_tif, path_to_zip
+        return file_tif, path_to_tif, path_to_zip
 
 
 def cleanup_downloads(folder_path):
@@ -280,20 +281,14 @@ def delete_files(input_path):
 ############################
 
 
-def zip_file(job, band_output, scene_id, input_path, file_location):
+def zip_file(job_attributes, file_tif, path_to_tif, path_to_zip):
     """
     Compress the image.
     """
     print 'Zipping file'
-    UserJob_Model.set_job_status(job['job_id'], 3)
-    file_name_zip = '{}_bands_{}.zip'.format(scene_id, band_output)
-    file_name = '{}_bands_{}.TIF'.format(scene_id, band_output)
-    path_to_zip = os.path.join(input_path, file_name_zip)
+    UserJob_Model.set_job_status(job_attributes['job_id'], 3)
     with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
-        myzip.write(file_location, arcname=file_name)
-
-    file_location = os.path.join(input_path, file_name_zip)
-    return file_location
+        myzip.write(path_to_tif, arcname=file_tif)
 
 
 ############################
@@ -325,11 +320,9 @@ def remove_and_rename(delete_me, rename_me):
         os.rename(i, o)
 
 
-def tif_to_png(path_to_tif, path_to_png, file_name):
+def tif_to_png(path_to_tif, path_to_png):
     """Convert a tif file to a png"""
     subprocess.call(['convert', path_to_tif, path_to_png])
-    file_pre_png = 'pre_{}.png'.format(file_name)
-    return file_pre_png
 
 if __name__ == '__main__':
     checking_for_jobs(sys.argv[1])
