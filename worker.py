@@ -57,13 +57,13 @@ def checking_for_jobs(rendertype):
             delete_job_from_queue(SQSconn, job_message, jobs_queue)
 
             # Process full res images
-            process_job(job_attributes, rendertype)
+            process_job(job_attributes, BUCKET, rendertype)
 
 
-def process_job(job_attributes, rendertype):
+def process_job(job_attributes, BUCKET, rendertype):
     """Begin the image processing and log the results."""
     try:
-        proc_status = process(job_attributes, rendertype)
+        proc_status = process(job_attributes, BUCKET, rendertype)
         write_activity('Job process status',
                        unicode(proc_status), 'success')
     except Exception as e:
@@ -79,7 +79,7 @@ def process_job(job_attributes, rendertype):
         UserJob_Model.set_job_status(job_attributes['job_id'], 10)
 
 
-def process(job_attributes, rendertype):
+def process(job_attributes, BUCKET, rendertype):
     """Given bands and sceneID, download, image process, zip & upload to S3."""
     # set worker instance id for job
     UserJob_Model.set_worker_instance_id(job_attributes['job_id'], INSTANCE_ID)
@@ -98,30 +98,39 @@ def process(job_attributes, rendertype):
         merge_images(input_path, bands)
 
         # construct the file names
+        file_name, path_to_tif, path_to_png = name_files(bands,
+                                                         input_path,
+                                                         scene_id)
+
+        # convert from TIF to png
+        file_pre_png = tif_to_png(path_to_tif, path_to_png, file_name)
+
+        file_upload_name = file_pre_png
+        file_to_upload = path_to_png
+
+    elif rendertype == 'full':
+        # call landsat-util to merge images
+        merge_images(input_path, bands)
+
+        # construct the file names
         file_location, file_name, file_tif = name_files(bands,
                                                         input_path,
                                                         scene_id)
 
-        # convert from TIF to png
-        file_name_ext = tif_to_png(file_location, file_name, file_tif)
-
-    elif rendertype == 'full':
-        # call landsat-util to merge images
-        band_output, file_location = merge_images(
-            job_attributes, input_path, bands, PATH_DOWNLOAD, scene_id)
-
         # zip file, maintain location
-        file_name_ext, file_location = zip_file(job_attributes,
+        file_zip, file_location = zip_file(job_attributes,
                                                 band_output,
                                                 scene_id,
                                                 input_path,
                                                 file_location)
+        file_upload_name = file_zip
+        file_to_upload = path_to_zip
 
     # upload to s3
-        upload_to_s3(file_location, file_name_ext, job_attributes)
+    upload_to_s3(file_to_upload, file_upload_name, job_attributes, BUCKET)
 
     # delete files
-        delete_files(input_path)
+    delete_files(input_path)
 
     return True
 
@@ -155,6 +164,25 @@ def merge_images(job, input_path, bands):
         processor.run(pansharpen=False)
     except:
         raise Exception('Processing/landsat-util failed')
+
+
+def name_files(bands, input_path, scene_id):
+    """Give filenames to files for each band """
+    band_output = ''
+    for i in bands:
+        band_output = '{}{}'.format(band_output, i)
+
+    file_name = '{}_bands_{}'.format(scene_id, band_output)
+
+    file_tif = '{}.TIF'.format(file_name)
+    file_png = '{}.png'.format(file_name)
+    file_zip = '{}.zip'.format(file_name)
+
+    path_to_tif = os.path.join(input_path, file_tif)
+    path_to_png = os.path.join(input_path, file_png)
+    path_to_zip = os.path.join(input_path, file_zip)
+
+    return file_name, path_to_tif, path_to_png
 
 
 def cleanup_downloads(folder_path):
@@ -205,25 +233,9 @@ def delete_job_from_queue(SQSconn, job_message, jobs_queue):
                        e.message, 'error')
 
 
-def name_files(bands, input_path, scene_id, rendertype):
-    """Give filenames to files for each band """
-    band_output = ''
-    for i in bands:
-        band_output = '{}{}'.format(band_output, i)
-
-    if rendertype == u'preview':
-        file_name = '{}_bands_{}'.format(scene_id, band_output)
-        file_tif = '{}.TIF'.format(os.path.join(input_path, file_name))
-        file_location = '{}png'.format(file_tif[:-3])
-        return file_location, file_name, file_tif
-    elif rendertype == u'full':
-        file_name = '{}_bands_{}.TIF'.format(scene_id, band_output)
-        file_location = os.path.join(input_path, file_name)
-        return band_output, file_location
-
-
 def upload_to_s3(file_location, file_name_ext, job_attributes, BUCKET):
     """Upload the processed file to S3, update job database"""
+
     try:
         print 'Uploading to S3'
         UserJob_Model.set_job_status(job_attributes['job_id'], 4)
@@ -303,11 +315,11 @@ def remove_and_rename(delete_me, rename_me):
         os.rename(i, o)
 
 
-def tif_to_png(file_location, file_name, file_tif):
+def tif_to_png(path_to_tif, path_to_png, file_name):
     """Convert a tif file to a png"""
-    subprocess.call(['convert', file_tif, file_location])
-    file_png = 'pre_{}.png'.format(file_name)
-    return file_png
+    subprocess.call(['convert', path_to_tif, path_to_png])
+    file_pre_png = 'pre_{}.png'.format(file_name)
+    return file_pre_png
 
 if __name__ == '__main__':
     checking_for_jobs(sys.argv[1])
