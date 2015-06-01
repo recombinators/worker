@@ -360,6 +360,7 @@ def test_whole_process_run_preview(Key, boto, setup_dirs):
     # worker.process returns True if it works:
     assert result
 
+
 @mock.patch('worker.worker.Key')
 @mock.patch('worker.worker.boto')
 def test_whole_process_run_full(Key, boto, setup_dirs):
