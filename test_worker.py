@@ -113,65 +113,66 @@ def test_db_is_rolled_back(db_session):
     assert 0 == db_session.query(models.UserJob_Model).count()
 
 
-# --module function tests
-def test_cleanup_downloads():
-    test_dir = os.getcwd() + '/testdir'
+# # --module function tests
+# def test_cleanup_downloads():
+#     test_dir = os.getcwd() + '/testdir'
 
-    if not os.path.exists(test_dir):
-        os.makedirs(test_dir)
+#     if not os.path.exists(test_dir):
+#         os.makedirs(test_dir)
 
-    f = open(test_dir + '/test.txt', 'a')
-    f.write('this is a test')
-    f.close()
-    # cleanup_downloads returns True if works
-    assert worker.cleanup_downloads(test_dir)
-
-
-# --jobs queue
-@pytest.mark.usefixtures("connection", "db_session")
-class TestQueue(unittest.TestCase):
-
-    @pytest.fixture(autouse=True)
-    def setup_tmpdir(self, tmpdir):
-        self.tmpdir = tmpdir
-
-    class Fake_Job_Class():
-        def __init__(self, message_content, message_attributes):
-            self.message_content = message_content
-            self.message_attributes = message_attributes
-
-    message = {'job_id': {'string_value': 1, 'data_type': 'Number'},
-               'band_2': {'string_value': 3, 'data_type': 'Number'},
-               'band_3': {'string_value': 2, 'data_type': 'Number'},
-               'band_1': {'string_value': 4, 'data_type': 'Number'},
-               'scene_id': {'string_value': 'LC80470272015005LGN00',
-                            'data_type': 'String'},
-               'email': {'string_value': 'test@test.com',
-                         'data_type': 'String'}}
-
-    fake_job_for_queue = [Fake_Job_Class("job", message)]
-    bad_fake_job = [Fake_Job_Class("job", ['test'])]
-
-    def test_get_job_attributes_returns_correctly(self):
-        result = worker.get_job_attributes(self.fake_job_for_queue)
-        assert result == (
-            {'job_id': 1, 'band_2': 3, 'band_3': 2, 'band_1': 4,
-             'scene_id': 'LC80470272015005LGN00', 'email': 'test@test.com'})
+#     f = open(test_dir + '/test.txt', 'a')
+#     f.write('this is a test')
+#     f.close()
+#     # cleanup_downloads returns True if works
+#     assert worker.cleanup_downloads(test_dir)
 
 
-# --process tests
-@pytest.mark.usefixtures("setup_dirs")
-class TestImageFiles(unittest.TestCase):
-    """These tests require real files"""
+# # --jobs queue
+# @pytest.mark.usefixtures("connection", "db_session")
+# class TestQueue(unittest.TestCase):
 
-    @mock.patch('worker.worker.Downloader')
-    def test_download_returns_correct_values(self, Downloader):
-        bands, input_path, scene_id = (worker.download_and_set(
-            TestProcess.fake_job_message))
-        self.assertEqual(input_path,
-                         os.getcwd() + '/test_download/LC80470272015005LGN00')
-        self.assertEqual(bands, [u'4', u'3', u'2'])
-        self.assertEqual(scene_id, 'LC80470272015005LGN00')
+#     @pytest.fixture(autouse=True)
+#     def setup_tmpdir(self, tmpdir):
+#         self.tmpdir = tmpdir
+
+#     class Fake_Job_Class():
+#         def __init__(self, message_content, message_attributes):
+#             self.message_content = message_content
+#             self.message_attributes = message_attributes
+
+#     message = {'job_id': {'string_value': 1, 'data_type': 'Number'},
+#                'band_2': {'string_value': 3, 'data_type': 'Number'},
+#                'band_3': {'string_value': 2, 'data_type': 'Number'},
+#                'band_1': {'string_value': 4, 'data_type': 'Number'},
+#                'scene_id': {'string_value': 'LC80470272015005LGN00',
+#                             'data_type': 'String'},
+#                'email': {'string_value': 'test@test.com',
+#                          'data_type': 'String'}}
+
+#     fake_job_for_queue = [Fake_Job_Class("job", message)]
+#     bad_fake_job = [Fake_Job_Class("job", ['test'])]
+
+#     def test_get_job_attributes_returns_correctly(self):
+#         result = worker.get_job_attributes(self.fake_job_for_queue)
+#         assert result == (
+#             {'job_id': 1, 'band_2': 3, 'band_3': 2, 'band_1': 4,
+#              'scene_id': 'LC80470272015005LGN00', 'email': 'test@test.com'})
+
+
+# # --process tests
+# @pytest.mark.usefixtures("setup_dirs")
+# class TestImageFiles(unittest.TestCase):
+#     """These tests require real files"""
+
+#     @mock.patch('worker.worker.Downloader')
+#     def test_download_returns_correct_values(self, Downloader):
+#         bands, input_path, scene_id = (worker.download_and_set(
+#             TestProcess.fake_job_message))
+#         self.assertEqual(input_path,
+#                          TestProcess.test_path_download + '/' +
+#                          TestProcess.test_scene_id)
+#         self.assertEqual(bands, TestProcess.test_bands)
+#         self.assertEqual(scene_id, TestProcess.test_scene_id)
 
 
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
@@ -198,6 +199,10 @@ class TestProcess(unittest.TestCase):
     test_path_download = os.getcwd() + '/test_download'
     test_input_path = os.path.join(test_path_download, test_scene_id)
 
+    test_band2_tif = '{}_B2.TIF'.format(test_scene_id)
+    test_band3_tif = '{}_B3.TIF'.format(test_scene_id)
+    test_band4_tif = '{}_B4.TIF'.format(test_scene_id)
+
     test_file_name = '{}_bands_432'.format(test_scene_id)
 
     test_file_tif = '{}.TIF'.format(test_file_name)
@@ -217,160 +222,171 @@ class TestProcess(unittest.TestCase):
     test_rendertype_full = 'full'
 
     @mock.patch('worker.worker.Downloader')
-    def test_download_errors_correctly(self, Downloader):
+    def test_download_and_set(self, Downloader):
+        bands, input_path, scene_id = (worker.download_and_set(
+                                       self.fake_job_message))
+
+        onlyfiles = [f for f in os.listdir(self.test_input_path)
+                     if os.path.isfile(os.path.join(self.test_input_path, f))]
+        self.assertIn(self.test_band2_tif, onlyfiles)
+        self.assertIn(self.test_band3_tif, onlyfiles)
+        self.assertIn(self.test_band4_tif, onlyfiles)
+
+    @mock.patch('worker.worker.Downloader')
+    def test_download_and_set_errors_correctly(self, Downloader):
         with pytest.raises(Exception):
             bands, input_path, scene_id = (worker.download_and_set(
                 self.bad_job_message))
 
-    # --preview process tests
-    def test_preview_resize_bands_creates_files(self):
-        """If test files don't exist, make them exist.
+#     # --preview process tests
+#     def test_preview_resize_bands_creates_files(self):
+#         """If test files don't exist, make them exist.
 
-        The files are either downloaded from a fileserver, or unzipped
-        from an archive file if it exists.
-        """
-        delete_me, rename_me = (
-            worker.resize_bands(self.fake_job_message,
-                                self.test_bands,
-                                self.test_input_path,
-                                self.test_scene_id))
-        expected_delete_me = (
-            [os.path.join(self.test_input_path,
-                          '{}_B4.TIF'.format(self.test_scene_id)),
-             os.path.join(self.test_input_path,
-                          '{}_B3.TIF'.format(self.test_scene_id)),
-             os.path.join(self.test_input_path,
-                          '{}_B2.TIF'.format(self.test_scene_id))])
-        self.assertEqual(delete_me, expected_delete_me)
+#         The files are either downloaded from a fileserver, or unzipped
+#         from an archive file if it exists.
+#         """
+#         delete_me, rename_me = (
+#             worker.resize_bands(self.fake_job_message,
+#                                 self.test_bands,
+#                                 self.test_input_path,
+#                                 self.test_scene_id))
+#         expected_delete_me = (
+#             [os.path.join(self.test_input_path,
+#                           '{}_B4.TIF'.format(self.test_scene_id)),
+#              os.path.join(self.test_input_path,
+#                           '{}_B3.TIF'.format(self.test_scene_id)),
+#              os.path.join(self.test_input_path,
+#                           '{}_B2.TIF'.format(self.test_scene_id))])
+#         self.assertEqual(delete_me, expected_delete_me)
 
-    def test_preview_resize_bands_fails_with_message(self):
-        with pytest.raises(Exception) as e:
-            delete_me, rename_me = (
-                worker.resize_bands(self.fake_job_message,
-                                    self.bad_test_bands,
-                                    '',
-                                    self.test_scene_id)
-            )
-        print(e.value)
-        assert 'gdal_translate did not downsize images' in str(e.value)
+#     def test_preview_resize_bands_fails_with_message(self):
+#         with pytest.raises(Exception) as e:
+#             delete_me, rename_me = (
+#                 worker.resize_bands(self.fake_job_message,
+#                                     self.bad_test_bands,
+#                                     '',
+#                                     self.test_scene_id)
+#             )
+#         print(e.value)
+#         assert 'gdal_translate did not downsize images' in str(e.value)
 
-    @mock.patch('worker.worker.os')
-    def test_preview_remove_and_rename(self, mock_os):
-        worker.remove_and_rename(['filelist1'], ['filelist2'])
-        mock_os.remove.assert_called_with('filelist1')
-        mock_os.rename.assert_called_with('filelist2', 'filelist1')
+#     @mock.patch('worker.worker.os')
+#     def test_preview_remove_and_rename(self, mock_os):
+#         worker.remove_and_rename(['filelist1'], ['filelist2'])
+#         mock_os.remove.assert_called_with('filelist1')
+#         mock_os.rename.assert_called_with('filelist2', 'filelist1')
 
-    def test_preview_name_files(self):
-        file_pre_png, path_to_tif, path_to_png = (
-            worker.name_files(self.test_bands,
-                              self.test_input_path,
-                              self.test_scene_id,
-                              self.test_rendertype_preview))
-        assert file_pre_png == self.test_file_pre_png
-        assert path_to_tif == (
-            self.test_input_path + '/' + self.test_file_tif)
-        assert path_to_png == (
-            self.test_input_path + '/' + self.test_file_png)
+#     def test_preview_name_files(self):
+#         file_pre_png, path_to_tif, path_to_png = (
+#             worker.name_files(self.test_bands,
+#                               self.test_input_path,
+#                               self.test_scene_id,
+#                               self.test_rendertype_preview))
+#         assert file_pre_png == self.test_file_pre_png
+#         assert path_to_tif == (
+#             self.test_input_path + '/' + self.test_file_tif)
+#         assert path_to_png == (
+#             self.test_input_path + '/' + self.test_file_png)
 
-    @mock.patch('worker.worker.subprocess')
-    def test_preview_tif_to_png(self, mock_subp):
-        worker.tif_to_png(self.test_path_to_tif,
-                          self.test_path_to_png)
-        # assert file_pre_png == self.test_file_pre_png
-        mock_subp.call.assert_called_with(['convert',
-                                           self.test_path_to_tif,
-                                           self.test_path_to_png])
+#     @mock.patch('worker.worker.subprocess')
+#     def test_preview_tif_to_png(self, mock_subp):
+#         worker.tif_to_png(self.test_path_to_tif,
+#                           self.test_path_to_png)
+#         # assert file_pre_png == self.test_file_pre_png
+#         mock_subp.call.assert_called_with(['convert',
+#                                            self.test_path_to_tif,
+#                                            self.test_path_to_png])
 
-    # --full process tests
-    def test_full_name_files(self):
-        file_tif, path_to_tif, path_to_zip = (
-            worker.name_files(self.test_bands,
-                              self.test_input_path,
-                              self.test_scene_id,
-                              self.test_rendertype_full))
-        assert file_tif == self.test_file_tif
-        assert path_to_tif == (
-            self.test_input_path + '/' + self.test_file_tif)
-        assert path_to_zip == (
-            self.test_input_path + '/' + self.test_file_zip)
+#     # --full process tests
+#     def test_full_name_files(self):
+#         file_tif, path_to_tif, path_to_zip = (
+#             worker.name_files(self.test_bands,
+#                               self.test_input_path,
+#                               self.test_scene_id,
+#                               self.test_rendertype_full))
+#         assert file_tif == self.test_file_tif
+#         assert path_to_tif == (
+#             self.test_input_path + '/' + self.test_file_tif)
+#         assert path_to_zip == (
+#             self.test_input_path + '/' + self.test_file_zip)
 
-    @mock.patch('worker.worker.zipfile')
-    def test_full_zip_file(self, mock_zipfile):
-        worker.zip_file(self.fake_job_message,
-                        self.test_file_tif,
-                        self.test_path_to_tif,
-                        self.test_path_to_zip)
-        mock_zipfile.ZipFile.assert_called_with(self.test_path_to_zip,
-                                                'w',
-                                                mock_zipfile.ZIP_DEFLATED)
+#     @mock.patch('worker.worker.zipfile')
+#     def test_full_zip_file(self, mock_zipfile):
+#         worker.zip_file(self.fake_job_message,
+#                         self.test_file_tif,
+#                         self.test_path_to_tif,
+#                         self.test_path_to_zip)
+#         mock_zipfile.ZipFile.assert_called_with(self.test_path_to_zip,
+#                                                 'w',
+#                                                 mock_zipfile.ZIP_DEFLATED)
 
-    # --process tests
-    @mock.patch('worker.worker.Process')
-    def test_merge_images(self, Process):
-        worker.merge_images(self.fake_job_message,
-                            self.test_input_path,
-                            self.test_bands)
-        worker.Process.assert_called_with(
-            self.test_input_path,
-            dst_path=worker.PATH_DOWNLOAD,
-            verbose=False,
-            bands=self.test_bands
-        )
+#     # --process tests
+#     @mock.patch('worker.worker.Process')
+#     def test_merge_images(self, Process):
+#         worker.merge_images(self.fake_job_message,
+#                             self.test_input_path,
+#                             self.test_bands)
+#         worker.Process.assert_called_with(
+#             self.test_input_path,
+#             dst_path=worker.PATH_DOWNLOAD,
+#             verbose=False,
+#             bands=self.test_bands
+#         )
 
-    @mock.patch('worker.worker.Process')
-    def test_merge_images_fails_with_exception(self, Process):
-        worker.Process.side_effect = Exception()
-        with pytest.raises(Exception) as e:
-            worker.merge_images(self.fake_job_message, '', self.bad_test_bands)
-        assert 'Processing/landsat-util failed' in str(e.value)
+#     @mock.patch('worker.worker.Process')
+#     def test_merge_images_fails_with_exception(self, Process):
+#         worker.Process.side_effect = Exception()
+#         with pytest.raises(Exception) as e:
+#             worker.merge_images(self.fake_job_message, '', self.bad_test_bands)
+#         assert 'Processing/landsat-util failed' in str(e.value)
 
-    @mock.patch('worker.worker.Key')
-    @mock.patch('worker.worker.boto')
-    def test_upload_to_s3(self, boto, Key):
-        self.assertIsNone(worker.upload_to_s3(self.test_file_pre_png,
-                                              self.test_path_to_png,
-                                              self.fake_job_message,
-                                              self.test_preview_bucket))
+#     @mock.patch('worker.worker.Key')
+#     @mock.patch('worker.worker.boto')
+#     def test_upload_to_s3(self, boto, Key):
+#         self.assertIsNone(worker.upload_to_s3(self.test_file_pre_png,
+#                                               self.test_path_to_png,
+#                                               self.fake_job_message,
+#                                               self.test_preview_bucket))
 
-    @mock.patch('worker.worker.Key')
-    @mock.patch('worker.worker.boto')
-    def test_upload_to_s3_fails_with_exception(self, boto, Key):
-        # missing job argument to cause exception
-        worker.boto.connect_s3.side_effect = Exception()
-        with pytest.raises(Exception) as e:
-            worker.upload_to_s3(None,
-                                '',
-                                self.bad_job_message,
-                                self.test_preview_bucket)
-        assert 'S3 Upload failed' in str(e.value)
+#     @mock.patch('worker.worker.Key')
+#     @mock.patch('worker.worker.boto')
+#     def test_upload_to_s3_fails_with_exception(self, boto, Key):
+#         # missing job argument to cause exception
+#         worker.boto.connect_s3.side_effect = Exception()
+#         with pytest.raises(Exception) as e:
+#             worker.upload_to_s3(None,
+#                                 '',
+#                                 self.bad_job_message,
+#                                 self.test_preview_bucket)
+#         assert 'S3 Upload failed' in str(e.value)
 
-    @mock.patch('worker.worker.rmtree')
-    def test_delete_files(self, mock_rmtree):
-        worker.delete_files(self.test_input_path)
-        mock_rmtree.assert_called_with(self.test_input_path)
-        # check error checking:
-        worker.rmtree.side_effect = Exception(OSError)
-        with pytest.raises(Exception):
-            worker.delete_files('files')
-
-
-@mock.patch('worker.worker.Key')
-@mock.patch('worker.worker.boto')
-def test_whole_process_run_preview(Key, boto, setup_dirs):
-
-    result = worker.process(TestProcess.fake_job_message,
-                            TestProcess.test_preview_bucket,
-                            TestProcess.test_rendertype_preview)
-    # worker.process returns True if it works:
-    assert result
+#     @mock.patch('worker.worker.rmtree')
+#     def test_delete_files(self, mock_rmtree):
+#         worker.delete_files(self.test_input_path)
+#         mock_rmtree.assert_called_with(self.test_input_path)
+#         # check error checking:
+#         worker.rmtree.side_effect = Exception(OSError)
+#         with pytest.raises(Exception):
+#             worker.delete_files('files')
 
 
-@mock.patch('worker.worker.Key')
-@mock.patch('worker.worker.boto')
-def test_whole_process_run_full(Key, boto, setup_dirs):
+# @mock.patch('worker.worker.Key')
+# @mock.patch('worker.worker.boto')
+# def test_whole_process_run_preview(Key, boto, setup_dirs):
 
-    result = worker.process(TestProcess.fake_job_message,
-                            TestProcess.test_full_bucket,
-                            TestProcess.test_rendertype_full)
-    # worker.process returns True if it works:
-    assert result
+#     result = worker.process(TestProcess.fake_job_message,
+#                             TestProcess.test_preview_bucket,
+#                             TestProcess.test_rendertype_preview)
+#     # worker.process returns True if it works:
+#     assert result
+
+
+# @mock.patch('worker.worker.Key')
+# @mock.patch('worker.worker.boto')
+# def test_whole_process_run_full(Key, boto, setup_dirs):
+
+#     result = worker.process(TestProcess.fake_job_message,
+#                             TestProcess.test_full_bucket,
+#                             TestProcess.test_rendertype_full)
+#     # worker.process returns True if it works:
+#     assert result
