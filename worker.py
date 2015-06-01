@@ -218,7 +218,9 @@ def merge_images(job_attributes, input_path, bands):
         processor = Process(input_path, bands=bands, dst_path=PATH_DOWNLOAD,
                             verbose=False)
         processor.run(pansharpen=False)
+        write_activity('Merge images', str(bands), 'success')
     except:
+        write_activity('Merge images', str(bands), 'fail')
         raise Exception('Processing/landsat-util failed')
 
 
@@ -315,6 +317,7 @@ def resize_bands(job_attributes, bands, input_path, scene_id):
                 raise Exception('gdal_translate did not downsize images')
         write_activity('Resize bands', str(bands), 'success')
     except Exception:
+        raise Exception('gdal_translate did not downsize images')
         write_activity('Resize bands', str(bands), 'fail')
     return delete_me, rename_me
 
