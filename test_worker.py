@@ -357,6 +357,6 @@ def test_whole_process_run_full(Key, boto, setup_dirs):
 
     result = worker.process(TestProcess.fake_job_message,
                             TestProcess.test_preview_bucket,
-                            TestProcess.test_rendertype_preview)
+                            TestProcess.test_rendertype_full)
     # worker.process returns True if it works:
     assert result

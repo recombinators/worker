@@ -271,9 +271,9 @@ def delete_files(input_path):
     """Remove leftover files when we are done with them."""
     try:
         rmtree(input_path)
+        write_activity('Delete files', str(input_path), 'success')
     except OSError:
-        print input_path
-        print 'error deleting files'
+        write_activity('Delete files', str(input_path), 'fail')
 
 
 ############################
