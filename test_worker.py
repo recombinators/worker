@@ -16,20 +16,20 @@ def setup_dirs(monkeypatch):
     from shutil import rmtree
     monkeypatch.setattr(worker,
                         'PATH_DOWNLOAD',
-                        str(TestPreviewProcess.test_path_download)
+                        str(TestProcess.test_path_download)
                         )
 
-    if os.path.exists(TestPreviewProcess.test_path_download):
-        rmtree(TestPreviewProcess.test_path_download)
-    if not os.path.exists(TestPreviewProcess.test_input_path):
-        os.makedirs(TestPreviewProcess.test_input_path)
+    if os.path.exists(TestProcess.test_path_download):
+        rmtree(TestProcess.test_path_download)
+    if not os.path.exists(TestProcess.test_input_path):
+        os.makedirs(TestProcess.test_input_path)
         try:
             with ZipFile('test_tiffs_Archive.zip', 'r') as zip_file:
-                zip_file.extractall(TestPreviewProcess.test_input_path)
+                zip_file.extractall(TestProcess.test_input_path)
         except IOError:
             print("Archive does not exist - downloading files")
             bands, input_path, scene_id = worker.download_and_set(
-                TestPreviewProcess.fake_job_message)
+                TestProcess.fake_job_message)
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -167,7 +167,7 @@ class TestImageFiles(unittest.TestCase):
     @mock.patch('worker.worker.Downloader')
     def test_download_returns_correct_values(self, Downloader):
         bands, input_path, scene_id = (worker.download_and_set(
-            TestPreviewProcess.fake_job_message))
+            TestProcess.fake_job_message))
         self.assertEqual(input_path,
                          os.getcwd() + '/test_download/LC80470272015005LGN00')
         self.assertEqual(bands, [u'4', u'3', u'2'])
@@ -175,7 +175,7 @@ class TestImageFiles(unittest.TestCase):
 
 
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
-class TestPreviewProcess(unittest.TestCase):
+class TestProcess(unittest.TestCase):
 
     fake_job_message = {u'job_id': u'1',
                         u'band_2': u'3',
@@ -259,6 +259,39 @@ class TestPreviewProcess(unittest.TestCase):
         mock_os.remove.assert_called_with('filelist1')
         mock_os.rename.assert_called_with('filelist2', 'filelist1')
 
+    def test_preview_name_files(self):
+        file_pre_png, path_to_tif, path_to_png = (
+            worker.name_files(self.test_bands,
+                              self.test_input_path,
+                              self.test_scene_id,
+                              self.test_rendertype_preview))
+        assert file_pre_png == self.test_file_pre_png
+        assert path_to_tif == (
+            self.test_input_path + '/' + self.test_file_tif)
+        assert path_to_png == (
+            self.test_input_path + '/' + self.test_file_png)
+
+    @mock.patch('worker.worker.subprocess')
+    def test_preview_tif_to_png(self, mock_subp):
+        worker.tif_to_png(self.test_path_to_tif,
+                          self.test_path_to_png)
+        # assert file_pre_png == self.test_file_pre_png
+        mock_subp.call.assert_called_with(['convert',
+                                           self.test_path_to_tif,
+                                           self.test_path_to_png])
+
+    def test_full_name_files(self):
+        file_tif, path_to_tif, path_to_zip = (
+            worker.name_files(self.test_bands,
+                              self.test_input_path,
+                              self.test_scene_id,
+                              self.test_rendertype_full))
+        assert file_tif == self.test_file_tif
+        assert path_to_tif == (
+            self.test_input_path + '/' + self.test_file_tif)
+        assert path_to_zip == (
+            self.test_input_path + '/' + self.test_file_zip)
+
     @mock.patch('worker.worker.Process')
     def test_merge_images(self, Process):
         worker.merge_images(self.fake_job_message,
@@ -277,39 +310,6 @@ class TestPreviewProcess(unittest.TestCase):
         with pytest.raises(Exception) as e:
             worker.merge_images(self.fake_job_message, '', self.bad_test_bands)
         assert 'Processing/landsat-util failed' in str(e.value)
-
-    def test_preview_name_files(self):
-        file_pre_png, path_to_tif, path_to_png = (
-            worker.name_files(self.test_bands,
-                              self.test_input_path,
-                              self.test_scene_id,
-                              self.test_rendertype_preview))
-        assert file_pre_png == self.test_file_pre_png
-        assert path_to_tif == (
-            self.test_input_path + '/' + self.test_file_tif)
-        assert path_to_png == (
-            self.test_input_path + '/' + self.test_file_png)
-
-    def test_full_name_files(self):
-        file_tif, path_to_tif, path_to_zip = (
-            worker.name_files(self.test_bands,
-                              self.test_input_path,
-                              self.test_scene_id,
-                              self.test_rendertype_full))
-        assert file_tif == self.test_file_tif
-        assert path_to_tif == (
-            self.test_input_path + '/' + self.test_file_tif)
-        assert path_to_zip == (
-            self.test_input_path + '/' + self.test_file_zip)
-
-    @mock.patch('worker.worker.subprocess')
-    def test_tif_to_png(self, mock_subp):
-        worker.tif_to_png(self.test_path_to_tif,
-                          self.test_path_to_png)
-        # assert file_pre_png == self.test_file_pre_png
-        mock_subp.call.assert_called_with(['convert',
-                                           self.test_path_to_tif,
-                                           self.test_path_to_png])
 
     @mock.patch('worker.worker.Key')
     @mock.patch('worker.worker.boto')
@@ -345,8 +345,18 @@ class TestPreviewProcess(unittest.TestCase):
 @mock.patch('worker.worker.boto')
 def test_whole_process_run_preview(Key, boto, setup_dirs):
 
-    result = worker.process(TestPreviewProcess.fake_job_message,
-                            TestPreviewProcess.test_preview_bucket,
-                            TestPreviewProcess.test_rendertype_preview)
+    result = worker.process(TestProcess.fake_job_message,
+                            TestProcess.test_preview_bucket,
+                            TestProcess.test_rendertype_preview)
+    # worker.process returns True if it works:
+    assert result
+
+@mock.patch('worker.worker.Key')
+@mock.patch('worker.worker.boto')
+def test_whole_process_run_full(Key, boto, setup_dirs):
+
+    result = worker.process(TestProcess.fake_job_message,
+                            TestProcess.test_preview_bucket,
+                            TestProcess.test_rendertype_preview)
     # worker.process returns True if it works:
     assert result
