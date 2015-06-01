@@ -35,6 +35,11 @@ except:
 ############################
 
 
+def write_activity(statement, value, activity_type):
+    """Write to activity log."""
+    WorkerLog.log_entry(INSTANCE_ID, statement, value, activity_type)
+
+
 def checking_for_jobs(rendertype):
     """Poll jobs queue for jobs."""
 
@@ -58,6 +63,32 @@ def checking_for_jobs(rendertype):
 
             # Process full res images
             process_job(job_attributes, BUCKET, rendertype)
+
+
+def get_job_attributes(job_message):
+    """Get job attributes, log the result."""
+    job_attributes = None
+    try:
+        job_attributes = get_attributes(job_message[0])
+        write_activity('Job attributes',
+                       str(job_attributes), 'success')
+    except Exception as e:
+        write_activity('Attribute retrieval fail because',
+                       e.message, 'error')
+    return job_attributes
+
+
+def delete_job_from_queue(SQSconn, job_message, jobs_queue):
+    """Remove the job from the job queue."""
+    try:
+        del_status = delete_message_from_handle(SQSconn,
+                                                jobs_queue,
+                                                job_message[0])
+        write_activity('Delete status', unicode(del_status), 'success')
+    except Exception as e:
+        write_activity('Delete status', unicode(del_status), 'error')
+        write_activity('Delete message fail because ',
+                       e.message, 'error')
 
 
 def process_job(job_attributes, BUCKET, rendertype):
@@ -140,6 +171,23 @@ def process(job_attributes, BUCKET, rendertype):
     return True
 
 
+def cleanup_downloads(folder_path):
+    """Clean up download folder if process fails.
+
+    Return True if the download folder is empty.
+    """
+    for file_object in os.listdir(folder_path):
+        file_object_path = os.path.join(folder_path, file_object)
+        if os.path.isfile(file_object_path):
+            os.remove(file_object_path)
+        else:
+            rmtree(file_object_path)
+    if not os.listdir(folder_path):
+        return True
+    else:
+        return False
+
+
 def download_and_set(job_attributes):
     """Download 3 band files for the given sceneid"""
     # set worker instance id for job
@@ -194,54 +242,6 @@ def name_files(bands, input_path, scene_id, rendertype):
         file_zip = '{}.zip'.format(file_name)
         path_to_zip = os.path.join(input_path, file_zip)
         return file_tif, path_to_tif, path_to_zip
-
-
-def cleanup_downloads(folder_path):
-    """Clean up download folder if process fails.
-
-    Return True if the download folder is empty.
-    """
-    for file_object in os.listdir(folder_path):
-        file_object_path = os.path.join(folder_path, file_object)
-        if os.path.isfile(file_object_path):
-            os.remove(file_object_path)
-        else:
-            rmtree(file_object_path)
-    if not os.listdir(folder_path):
-        return True
-    else:
-        return False
-
-
-def write_activity(statement, value, activity_type):
-    """Write to activity log."""
-    WorkerLog.log_entry(INSTANCE_ID, statement, value, activity_type)
-
-
-def get_job_attributes(job_message):
-    """Get job attributes, log the result."""
-    job_attributes = None
-    try:
-        job_attributes = get_attributes(job_message[0])
-        write_activity('Job attributes',
-                       str(job_attributes), 'success')
-    except Exception as e:
-        write_activity('Attribute retrieval fail because',
-                       e.message, 'error')
-    return job_attributes
-
-
-def delete_job_from_queue(SQSconn, job_message, jobs_queue):
-    """Remove the job from the job queue."""
-    try:
-        del_status = delete_message_from_handle(SQSconn,
-                                                jobs_queue,
-                                                job_message[0])
-        write_activity('Delete status', unicode(del_status), 'success')
-    except Exception as e:
-        write_activity('Delete status', unicode(del_status), 'error')
-        write_activity('Delete message fail because ',
-                       e.message, 'error')
 
 
 def upload_to_s3(file_to_upload, file_upload_name, job_attributes, BUCKET):
