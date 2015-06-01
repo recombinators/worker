@@ -285,10 +285,13 @@ def zip_file(job_attributes, file_tif, path_to_tif, path_to_zip):
     """
     Compress the image.
     """
-    print 'Zipping file'
-    UserJob_Model.set_job_status(job_attributes['job_id'], 3)
-    with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
-        myzip.write(path_to_tif, arcname=file_tif)
+    try:
+        write_activity('Zip files', str(path_to_zip), 'success')
+        UserJob_Model.set_job_status(job_attributes['job_id'], 3)
+        with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
+            myzip.write(path_to_tif, arcname=file_tif)
+    except Exception:
+        write_activity('Zip files', str(path_to_zip), 'fail')
 
 
 ############################
@@ -299,30 +302,42 @@ def resize_bands(job_attributes, bands, input_path, scene_id):
     """gdal resizes each band file and returns filenames to delete and rename"""
     UserJob_Model.set_job_status(job_attributes['job_id'], 3)
     delete_me, rename_me = [], []
-    # Resize each band
-    for band in bands:
-        file_name = '{}/{}_B{}.TIF'.format(input_path, scene_id, band)
-        delete_me.append(file_name)
-        file_name2 = '{}.re'.format(file_name)
-        rename_me.append(file_name2)
-        subprocess.call(['gdal_translate', '-outsize', '10%', '10%',
-                         file_name, file_name2])
-        if not os.path.exists(file_name2):
-            raise Exception('gdal_translate did not downsize images')
-    print 'Finished resizing three images.'
+    try:
+        # Resize each band
+        for band in bands:
+            file_name = '{}/{}_B{}.TIF'.format(input_path, scene_id, band)
+            delete_me.append(file_name)
+            file_name2 = '{}.re'.format(file_name)
+            rename_me.append(file_name2)
+            subprocess.call(['gdal_translate', '-outsize', '10%', '10%',
+                             file_name, file_name2])
+            if not os.path.exists(file_name2):
+                raise Exception('gdal_translate did not downsize images')
+        write_activity('Resize bands', str(bands), 'success')
+    except Exception:
+        write_activity('Resize bands', str(bands), 'fail')
     return delete_me, rename_me
 
 
 def remove_and_rename(delete_me, rename_me):
     """delete and rename files"""
-    for i, o in zip(rename_me, delete_me):
-        os.remove(o)
-        os.rename(i, o)
+    try:
+        for i, o in zip(rename_me, delete_me):
+            os.remove(o)
+            os.rename(i, o)
+        write_activity('Remove and rename', str(rename_me), 'success')
+    except Exception:
+        write_activity('Remove and rename', str(rename_me), 'fail')
 
 
 def tif_to_png(path_to_tif, path_to_png):
     """Convert a tif file to a png"""
-    subprocess.call(['convert', path_to_tif, path_to_png])
+    try:
+        subprocess.call(['convert', path_to_tif, path_to_png])
+        write_activity('Tif to png', str(path_to_png), 'success')
+    except Exception:
+        write_activity('Tif to png', str(path_to_tif), 'fail')
+
 
 if __name__ == '__main__':
     checking_for_jobs(sys.argv[1])
