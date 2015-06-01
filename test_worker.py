@@ -294,11 +294,15 @@ class TestProcess(unittest.TestCase):
         assert path_to_zip == (
             self.test_input_path + '/' + self.test_file_zip)
 
-    def test_full_zip_files(self):
-        worker.name_files(self.test_bands,
-                          self.test_input_path,
-                          self.test_scene_id,
-                          self.test_rendertype_full)
+    @mock.patch('worker.worker.zipfile')
+    def test_full_zip_file(self, mock_zipfile):
+        worker.zip_file(self.fake_job_message,
+                        self.test_file_tif,
+                        self.test_path_to_tif,
+                        self.test_path_to_zip)
+        mock_zipfile.ZipFile.assert_called_with(self.test_path_to_zip,
+                                                'w',
+                                                mock_zipfile.ZIP_DEFLATED)
 
     # --process tests
     @mock.patch('worker.worker.Process')
