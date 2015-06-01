@@ -222,6 +222,7 @@ class TestProcess(unittest.TestCase):
             bands, input_path, scene_id = (worker.download_and_set(
                 self.bad_job_message))
 
+    # --preview process tests
     def test_preview_resize_bands_creates_files(self):
         """If test files don't exist, make them exist.
 
@@ -280,6 +281,7 @@ class TestProcess(unittest.TestCase):
                                            self.test_path_to_tif,
                                            self.test_path_to_png])
 
+    # --full process tests
     def test_full_name_files(self):
         file_tif, path_to_tif, path_to_zip = (
             worker.name_files(self.test_bands,
@@ -292,6 +294,13 @@ class TestProcess(unittest.TestCase):
         assert path_to_zip == (
             self.test_input_path + '/' + self.test_file_zip)
 
+    def test_full_zip_files(self):
+        worker.name_files(self.test_bands,
+                          self.test_input_path,
+                          self.test_scene_id,
+                          self.test_rendertype_full)
+
+    # --process tests
     @mock.patch('worker.worker.Process')
     def test_merge_images(self, Process):
         worker.merge_images(self.fake_job_message,
