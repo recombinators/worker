@@ -114,7 +114,7 @@ def process(job_attributes, BUCKET, rendertype):
 
     elif rendertype == 'full':
         # call landsat-util to merge images
-        merge_images(input_path, bands)
+        merge_images(job_attributes, input_path, bands)
 
         # construct the file names
         file_tif, path_to_tif, path_to_zip = name_files(bands,
