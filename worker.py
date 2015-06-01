@@ -100,7 +100,7 @@ def process_job(job_attributes, BUCKET, rendertype):
     except Exception as e:
         proc_status = False
         # If processing fails, send message to pyramid to update db
-        write_activity('Job process success',
+        write_activity('Job process status',
                        unicode(proc_status), 'error')
         write_activity('Job process fail because',
                        e.message, 'error')
@@ -220,7 +220,7 @@ def merge_images(job_attributes, input_path, bands):
         processor.run(pansharpen=False)
         write_activity('Merge images', str(bands), 'success')
     except:
-        write_activity('Merge images', str(bands), 'fail')
+        write_activity('Merge images', str(bands), 'error')
         raise Exception('Processing/landsat-util failed')
 
 
@@ -263,10 +263,11 @@ def upload_to_s3(file_to_upload, file_upload_name, job_attributes, BUCKET):
         # make public
         hello.set_canned_acl('public-read')
         out = unicode(hello.generate_url(0, query_auth=False, force_http=True))
-        print out
         UserJob_Model.set_job_status(job_attributes['job_id'], 5, out)
+        write_activity('Upload files', out, 'success')
     except:
         raise Exception('S3 Upload failed')
+        write_activity('Upload files', str(file_to_upload), 'error')
 
 
 def delete_files(input_path):
@@ -275,7 +276,7 @@ def delete_files(input_path):
         rmtree(input_path)
         write_activity('Delete files', str(input_path), 'success')
     except OSError:
-        write_activity('Delete files', str(input_path), 'fail')
+        write_activity('Delete files', str(input_path), 'error')
 
 
 ############################
@@ -293,7 +294,7 @@ def zip_file(job_attributes, file_tif, path_to_tif, path_to_zip):
         with zipfile.ZipFile(path_to_zip, 'w', zipfile.ZIP_DEFLATED) as myzip:
             myzip.write(path_to_tif, arcname=file_tif)
     except Exception:
-        write_activity('Zip files', str(path_to_zip), 'fail')
+        write_activity('Zip files', str(path_to_zip), 'error')
 
 
 ############################
@@ -318,7 +319,7 @@ def resize_bands(job_attributes, bands, input_path, scene_id):
         write_activity('Resize bands', str(bands), 'success')
     except Exception:
         raise Exception('gdal_translate did not downsize images')
-        write_activity('Resize bands', str(bands), 'fail')
+        write_activity('Resize bands', str(bands), 'error')
     return delete_me, rename_me
 
 
@@ -330,7 +331,7 @@ def remove_and_rename(delete_me, rename_me):
             os.rename(i, o)
         write_activity('Remove and rename', str(rename_me), 'success')
     except Exception:
-        write_activity('Remove and rename', str(rename_me), 'fail')
+        write_activity('Remove and rename', str(rename_me), 'error')
 
 
 def tif_to_png(path_to_tif, path_to_png):
@@ -339,7 +340,7 @@ def tif_to_png(path_to_tif, path_to_png):
         subprocess.call(['convert', path_to_tif, path_to_png])
         write_activity('Tif to png', str(path_to_png), 'success')
     except Exception:
-        write_activity('Tif to png', str(path_to_tif), 'fail')
+        write_activity('Tif to png', str(path_to_tif), 'error')
 
 
 if __name__ == '__main__':
