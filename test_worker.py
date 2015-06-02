@@ -276,17 +276,26 @@ class TestProcess(unittest.TestCase):
 #         mock_os.remove.assert_called_with('filelist1')
 #         mock_os.rename.assert_called_with('filelist2', 'filelist1')
 
-#     def test_preview_name_files(self):
-#         file_pre_png, path_to_tif, path_to_png = (
-#             worker.name_files(self.test_bands,
-#                               self.test_input_path,
-#                               self.test_scene_id,
-#                               self.test_rendertype_preview))
-#         assert file_pre_png == self.test_file_pre_png
-#         assert path_to_tif == (
-#             self.test_input_path + '/' + self.test_file_tif)
-#         assert path_to_png == (
-#             self.test_input_path + '/' + self.test_file_png)
+    def test_preview_name_files(self):
+        file_pre_png, path_to_tif, path_to_png = (
+            worker.name_files(self.test_bands,
+                              self.test_input_path,
+                              self.test_scene_id,
+                              self.test_rendertype_preview))
+        assert file_pre_png == self.test_file_pre_png
+        assert path_to_tif == (
+            self.test_input_path + '/' + self.test_file_tif)
+        assert path_to_png == (
+            self.test_input_path + '/' + self.test_file_png)
+
+    def test_preview_name_files_error(self):
+        with pytest.raises(Exception) as e:
+            file_pre_png, path_to_tif, path_to_png = (
+                worker.name_files(self.test_bands,
+                                  None,
+                                  self.test_scene_id,
+                                  self.test_rendertype_preview))
+        assert 'File name creation failed' in str(e.value)
 
 #     @mock.patch('worker.worker.subprocess')
 #     def test_preview_tif_to_png(self, mock_subp):
@@ -297,18 +306,27 @@ class TestProcess(unittest.TestCase):
 #                                            self.test_path_to_tif,
 #                                            self.test_path_to_png])
 
-#     # --full process tests
-#     def test_full_name_files(self):
-#         file_tif, path_to_tif, path_to_zip = (
-#             worker.name_files(self.test_bands,
-#                               self.test_input_path,
-#                               self.test_scene_id,
-#                               self.test_rendertype_full))
-#         assert file_tif == self.test_file_tif
-#         assert path_to_tif == (
-#             self.test_input_path + '/' + self.test_file_tif)
-#         assert path_to_zip == (
-#             self.test_input_path + '/' + self.test_file_zip)
+    # --full process tests
+    def test_full_name_files(self):
+        file_tif, path_to_tif, path_to_zip = (
+            worker.name_files(self.test_bands,
+                              self.test_input_path,
+                              self.test_scene_id,
+                              self.test_rendertype_full))
+        assert file_tif == self.test_file_tif
+        assert path_to_tif == (
+            self.test_input_path + '/' + self.test_file_tif)
+        assert path_to_zip == (
+            self.test_input_path + '/' + self.test_file_zip)
+
+    def test_full_name_files_error(self):
+        with pytest.raises(Exception) as e:
+            file_pre_png, path_to_tif, path_to_png = (
+                worker.name_files(self.test_bands,
+                                  None,
+                                  self.test_scene_id,
+                                  self.test_rendertype_full))
+        assert 'File name creation failed' in str(e.value)
 
 #     @mock.patch('worker.worker.zipfile')
 #     def test_full_zip_file(self, mock_zipfile):
@@ -333,7 +351,7 @@ class TestProcess(unittest.TestCase):
         worker.Process.side_effect = Exception()
         with pytest.raises(Exception) as e:
             worker.merge_images(self.fake_job_message, '', self.bad_test_bands)
-        assert 'Processing/landsat-util failed' in str(e.value)
+        assert 'Merge images failed' in str(e.value)
 
 #     @mock.patch('worker.worker.Key')
 #     @mock.patch('worker.worker.boto')

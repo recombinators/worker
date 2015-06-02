@@ -222,29 +222,32 @@ def merge_images(job_attributes, input_path, bands):
         write_activity('Merge images', str(bands), 'success')
     except:
         write_activity('Merge images', str(bands), 'error')
-        raise Exception('Processing/landsat-util failed')
+        raise Exception('Merge images failed')
 
 
 def name_files(bands, input_path, scene_id, rendertype):
     """Give filenames to files for each band """
-    band_output = ''
-    for i in bands:
-        band_output = '{}{}'.format(band_output, i)
+    try:
+        band_output = ''
+        for i in bands:
+            band_output = '{}{}'.format(band_output, i)
 
-    file_name = '{}_bands_{}'.format(scene_id, band_output)
+        file_name = '{}_bands_{}'.format(scene_id, band_output)
 
-    file_tif = '{}.TIF'.format(file_name)
-    path_to_tif = os.path.join(input_path, file_tif)
+        file_tif = '{}.TIF'.format(file_name)
+        path_to_tif = os.path.join(input_path, file_tif)
 
-    if rendertype == 'preview':
-        file_png = '{}.png'.format(file_name)
-        path_to_png = os.path.join(input_path, file_png)
-        file_pre_png = 'pre_{}.png'.format(file_name)
-        return file_pre_png, path_to_tif, path_to_png
-    elif rendertype == 'full':
-        file_zip = '{}.zip'.format(file_name)
-        path_to_zip = os.path.join(input_path, file_zip)
-        return file_tif, path_to_tif, path_to_zip
+        if rendertype == 'preview':
+            file_png = '{}.png'.format(file_name)
+            path_to_png = os.path.join(input_path, file_png)
+            file_pre_png = 'pre_{}.png'.format(file_name)
+            return file_pre_png, path_to_tif, path_to_png
+        elif rendertype == 'full':
+            file_zip = '{}.zip'.format(file_name)
+            path_to_zip = os.path.join(input_path, file_zip)
+            return file_tif, path_to_tif, path_to_zip
+    except:
+        raise Exception('File name creation failed')
 
 
 def upload_to_s3(file_to_upload, file_upload_name, job_attributes, BUCKET):
