@@ -226,7 +226,6 @@ class TestProcess(unittest.TestCase):
 
         rmtree(TestProcess.test_path_download)
 
-
     @mock.patch('worker.worker.Downloader')
     def test_download_and_set(self, Downloader):
         bands, input_path, scene_id = (worker.download_and_set(
@@ -323,10 +322,6 @@ class TestProcess(unittest.TestCase):
         onlyfiles = [f for f in os.listdir(self.test_input_path)
                      if os.path.isfile(os.path.join(self.test_input_path, f))]
         self.assertIn(self.test_file_png, onlyfiles)
-        # assert file_pre_png == self.test_file_pre_png
-        # mock_subp.call.assert_called_with(['convert',
-        #                                    self.test_path_to_tif,
-        #                                    self.test_path_to_png])
 
     # --full process tests
     def test_full_name_files(self):
