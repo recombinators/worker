@@ -188,6 +188,10 @@ class TestProcess(unittest.TestCase):
     test_band3_tif = '{}_B3.TIF'.format(test_scene_id)
     test_band4_tif = '{}_B4.TIF'.format(test_scene_id)
 
+    test_band2_tif_filename2 = '{}.re'.format(test_band2_tif)
+    test_band3_tif_filename2 = '{}.re'.format(test_band3_tif)
+    test_band4_tif_filename2 = '{}.re'.format(test_band4_tif)
+
     test_file_name = '{}_bands_432'.format(test_scene_id)
 
     test_file_tif = '{}.TIF'.format(test_file_name)
@@ -244,7 +248,7 @@ class TestProcess(unittest.TestCase):
                 self.bad_job_message))
 
     # --preview process tests
-    def test_preview_resize_bands_creates_files(self):
+    def test_preview_resize_bands(self):
         """If test files don't exist, make them exist.
 
         The files are either downloaded from a fileserver, or unzipped
@@ -263,6 +267,12 @@ class TestProcess(unittest.TestCase):
              os.path.join(self.test_input_path,
                           '{}_B2.TIF'.format(self.test_scene_id))])
         self.assertEqual(delete_me, expected_delete_me)
+
+        onlyfiles = [f for f in os.listdir(self.test_input_path)
+                     if os.path.isfile(os.path.join(self.test_input_path, f))]
+        self.assertIn(self.test_band2_tif_filename2, onlyfiles)
+        self.assertIn(self.test_band3_tif_filename2, onlyfiles)
+        self.assertIn(self.test_band4_tif_filename2, onlyfiles)
 
 #     def test_preview_resize_bands_fails_with_message(self):
 #         with pytest.raises(Exception) as e:

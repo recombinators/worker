@@ -323,11 +323,11 @@ def resize_bands(job_attributes, bands, input_path, scene_id):
             subprocess.call(['gdal_translate', '-outsize', '10%', '10%',
                              file_name, file_name2])
             if not os.path.exists(file_name2):
-                raise Exception('gdal_translate did not downsize images')
+                raise Exception
         write_activity('Resize bands', str(bands), 'success')
     except Exception:
-        raise Exception('gdal_translate did not downsize images')
         write_activity('Resize bands', str(bands), 'error')
+        raise Exception('gdal_translate did not downsize images')
     return delete_me, rename_me
 
 
