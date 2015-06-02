@@ -208,6 +208,7 @@ def download_and_set(job_attributes):
         print 'Finished downloading.'
     except:
         raise Exception('Download failed')
+        # import pdb; pdb.set_trace()
     return bands, input_path, scene_id
 
 

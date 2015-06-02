@@ -174,7 +174,7 @@ def test_db_is_rolled_back(db_session):
 #         self.assertEqual(bands, TestProcess.test_bands)
 #         self.assertEqual(scene_id, TestProcess.test_scene_id)
 
-
+@pytest.mark.usefixtures("setup_dirs")
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
 class TestProcess(unittest.TestCase):
 
@@ -320,25 +320,20 @@ class TestProcess(unittest.TestCase):
 #                                                 'w',
 #                                                 mock_zipfile.ZIP_DEFLATED)
 
-#     # --process tests
-#     @mock.patch('worker.worker.Process')
-#     def test_merge_images(self, Process):
-#         worker.merge_images(self.fake_job_message,
-#                             self.test_input_path,
-#                             self.test_bands)
-#         worker.Process.assert_called_with(
-#             self.test_input_path,
-#             dst_path=worker.PATH_DOWNLOAD,
-#             verbose=False,
-#             bands=self.test_bands
-#         )
+    # --process tests
+    def test_merge_images(self):
+        worker.merge_images(self.fake_job_message,
+                            self.test_input_path,
+                            self.test_bands)
+        onlyfiles = [f for f in os.listdir(self.test_input_path)
+                     if os.path.isfile(os.path.join(self.test_input_path, f))]
+        self.assertIn(self.test_file_tif, onlyfiles)
 
-#     @mock.patch('worker.worker.Process')
-#     def test_merge_images_fails_with_exception(self, Process):
-#         worker.Process.side_effect = Exception()
-#         with pytest.raises(Exception) as e:
-#             worker.merge_images(self.fake_job_message, '', self.bad_test_bands)
-#         assert 'Processing/landsat-util failed' in str(e.value)
+    def test_merge_images_fails_with_exception(self):
+        worker.Process.side_effect = Exception()
+        with pytest.raises(Exception) as e:
+            worker.merge_images(self.fake_job_message, '', self.bad_test_bands)
+        assert 'Processing/landsat-util failed' in str(e.value)
 
 #     @mock.patch('worker.worker.Key')
 #     @mock.patch('worker.worker.boto')
