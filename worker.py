@@ -3,6 +3,7 @@ import sys
 import boto
 import subprocess
 import zipfile
+from PIL import Image
 from landsat.downloader import Downloader
 from landsat.landsat import Process
 from boto.s3.key import Key
@@ -270,8 +271,8 @@ def upload_to_s3(file_to_upload, file_upload_name, job_attributes, BUCKET):
         UserJob_Model.set_job_status(job_attributes['job_id'], 5, out)
         write_activity('Upload files', out, 'success')
     except:
-        raise Exception('S3 Upload failed')
         write_activity('Upload files', str(file_to_upload), 'error')
+        raise Exception('S3 Upload failed')
 
 
 def delete_files(input_path):
@@ -341,10 +342,12 @@ def remove_and_rename(delete_me, rename_me):
 def tif_to_png(path_to_tif, path_to_png):
     """Convert a tif file to a png"""
     try:
-        subprocess.call(['convert', path_to_tif, path_to_png])
+        im = Image.open(path_to_tif)
+        im.save(path_to_png, 'PNG')
         write_activity('Tif to png', str(path_to_png), 'success')
     except Exception:
         write_activity('Tif to png', str(path_to_tif), 'error')
+        raise Exception('Tif to png failed')
 
 
 if __name__ == '__main__':

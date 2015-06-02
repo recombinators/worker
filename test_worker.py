@@ -11,25 +11,10 @@ import factory.alchemy
 
 
 @pytest.fixture()
-def setup_dirs(monkeypatch):
-    from zipfile import ZipFile
-    from shutil import rmtree
+def setup_path(monkeypatch):
     monkeypatch.setattr(worker,
                         'PATH_DOWNLOAD',
-                        str(TestProcess.test_path_download)
-                        )
-
-    if os.path.exists(TestProcess.test_path_download):
-        rmtree(TestProcess.test_path_download)
-    if not os.path.exists(TestProcess.test_input_path):
-        os.makedirs(TestProcess.test_input_path)
-        try:
-            with ZipFile('test_tiffs_Archive.zip', 'r') as zip_file:
-                zip_file.extractall(TestProcess.test_input_path)
-        except IOError:
-            print("Archive does not exist - downloading files")
-            bands, input_path, scene_id = worker.download_and_set(
-                TestProcess.fake_job_message)
+                        str(TestProcess.test_path_download))
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -174,7 +159,7 @@ def test_db_is_rolled_back(db_session):
 #         self.assertEqual(bands, TestProcess.test_bands)
 #         self.assertEqual(scene_id, TestProcess.test_scene_id)
 
-@pytest.mark.usefixtures("setup_dirs")
+@pytest.mark.usefixtures("setup_path")
 @pytest.mark.usefixtures("connection", "db_session", "fake_job1")
 class TestProcess(unittest.TestCase):
 
@@ -220,6 +205,27 @@ class TestProcess(unittest.TestCase):
     test_full_bucket = 'snapsatcomposites'
     test_rendertype_preview = 'preview'
     test_rendertype_full = 'full'
+
+    @classmethod
+    def setup_class(cls):
+        from zipfile import ZipFile
+
+        if not os.path.exists(TestProcess.test_input_path):
+            os.makedirs(TestProcess.test_input_path)
+            try:
+                with ZipFile('test_tiffs_Archive.zip', 'r') as zip_file:
+                    zip_file.extractall(TestProcess.test_input_path)
+            except IOError:
+                print("Archive does not exist - downloading files")
+                bands, input_path, scene_id = worker.download_and_set(
+                    TestProcess.fake_job_message)
+
+    @classmethod
+    def teardown_class(cls):
+        from shutil import rmtree
+
+        rmtree(TestProcess.test_path_download)
+
 
     @mock.patch('worker.worker.Downloader')
     def test_download_and_set(self, Downloader):
@@ -276,6 +282,20 @@ class TestProcess(unittest.TestCase):
 #         mock_os.remove.assert_called_with('filelist1')
 #         mock_os.rename.assert_called_with('filelist2', 'filelist1')
 
+    def test_merge_images(self):
+        worker.merge_images(self.fake_job_message,
+                            self.test_input_path,
+                            self.test_bands)
+        onlyfiles = [f for f in os.listdir(self.test_input_path)
+                     if os.path.isfile(os.path.join(self.test_input_path, f))]
+        self.assertIn(self.test_file_tif, onlyfiles)
+
+    # def test_merge_images_fails_with_exception(self):
+    #     worker.Process.side_effect = Exception()
+    #     with pytest.raises(Exception) as e:
+    #         worker.merge_images(self.fake_job_message, '', self.bad_test_bands)
+    #     assert 'Merge images failed' in str(e.value)
+
     def test_preview_name_files(self):
         file_pre_png, path_to_tif, path_to_png = (
             worker.name_files(self.test_bands,
@@ -297,14 +317,16 @@ class TestProcess(unittest.TestCase):
                                   self.test_rendertype_preview))
         assert 'File name creation failed' in str(e.value)
 
-#     @mock.patch('worker.worker.subprocess')
-#     def test_preview_tif_to_png(self, mock_subp):
-#         worker.tif_to_png(self.test_path_to_tif,
-#                           self.test_path_to_png)
-#         # assert file_pre_png == self.test_file_pre_png
-#         mock_subp.call.assert_called_with(['convert',
-#                                            self.test_path_to_tif,
-#                                            self.test_path_to_png])
+    def test_preview_tif_to_png(self):
+        worker.tif_to_png(self.test_path_to_tif,
+                          self.test_path_to_png)
+        onlyfiles = [f for f in os.listdir(self.test_input_path)
+                     if os.path.isfile(os.path.join(self.test_input_path, f))]
+        self.assertIn(self.test_file_png, onlyfiles)
+        # assert file_pre_png == self.test_file_pre_png
+        # mock_subp.call.assert_called_with(['convert',
+        #                                    self.test_path_to_tif,
+        #                                    self.test_path_to_png])
 
     # --full process tests
     def test_full_name_files(self):
@@ -339,19 +361,7 @@ class TestProcess(unittest.TestCase):
 #                                                 mock_zipfile.ZIP_DEFLATED)
 
     # --process tests
-    def test_merge_images(self):
-        worker.merge_images(self.fake_job_message,
-                            self.test_input_path,
-                            self.test_bands)
-        onlyfiles = [f for f in os.listdir(self.test_input_path)
-                     if os.path.isfile(os.path.join(self.test_input_path, f))]
-        self.assertIn(self.test_file_tif, onlyfiles)
-
-    def test_merge_images_fails_with_exception(self):
-        worker.Process.side_effect = Exception()
-        with pytest.raises(Exception) as e:
-            worker.merge_images(self.fake_job_message, '', self.bad_test_bands)
-        assert 'Merge images failed' in str(e.value)
+    
 
 #     @mock.patch('worker.worker.Key')
 #     @mock.patch('worker.worker.boto')
