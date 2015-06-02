@@ -317,11 +317,15 @@ class TestProcess(unittest.TestCase):
         assert 'File name creation failed' in str(e.value)
 
     def test_preview_tif_to_png(self):
-        worker.tif_to_png(self.test_path_to_tif,
-                          self.test_path_to_png)
+        worker.tif_to_png(self.test_path_to_tif, self.test_path_to_png)
         onlyfiles = [f for f in os.listdir(self.test_input_path)
                      if os.path.isfile(os.path.join(self.test_input_path, f))]
         self.assertIn(self.test_file_png, onlyfiles)
+
+    def test_preview_tif_to_png_error(self):
+        with pytest.raises(Exception) as e:
+            worker.tif_to_png(None, self.test_path_to_png)
+        assert 'Tif to png failed' in str(e.value)
 
     # --full process tests
     def test_full_name_files(self):
