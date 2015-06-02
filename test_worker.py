@@ -243,26 +243,26 @@ class TestProcess(unittest.TestCase):
             bands, input_path, scene_id = (worker.download_and_set(
                 self.bad_job_message))
 
-#     # --preview process tests
-#     def test_preview_resize_bands_creates_files(self):
-#         """If test files don't exist, make them exist.
+    # --preview process tests
+    def test_preview_resize_bands_creates_files(self):
+        """If test files don't exist, make them exist.
 
-#         The files are either downloaded from a fileserver, or unzipped
-#         from an archive file if it exists.
-#         """
-#         delete_me, rename_me = (
-#             worker.resize_bands(self.fake_job_message,
-#                                 self.test_bands,
-#                                 self.test_input_path,
-#                                 self.test_scene_id))
-#         expected_delete_me = (
-#             [os.path.join(self.test_input_path,
-#                           '{}_B4.TIF'.format(self.test_scene_id)),
-#              os.path.join(self.test_input_path,
-#                           '{}_B3.TIF'.format(self.test_scene_id)),
-#              os.path.join(self.test_input_path,
-#                           '{}_B2.TIF'.format(self.test_scene_id))])
-#         self.assertEqual(delete_me, expected_delete_me)
+        The files are either downloaded from a fileserver, or unzipped
+        from an archive file if it exists.
+        """
+        delete_me, rename_me = (
+            worker.resize_bands(self.fake_job_message,
+                                self.test_bands,
+                                self.test_input_path,
+                                self.test_scene_id))
+        expected_delete_me = (
+            [os.path.join(self.test_input_path,
+                          '{}_B4.TIF'.format(self.test_scene_id)),
+             os.path.join(self.test_input_path,
+                          '{}_B3.TIF'.format(self.test_scene_id)),
+             os.path.join(self.test_input_path,
+                          '{}_B2.TIF'.format(self.test_scene_id))])
+        self.assertEqual(delete_me, expected_delete_me)
 
 #     def test_preview_resize_bands_fails_with_message(self):
 #         with pytest.raises(Exception) as e:
@@ -289,11 +289,11 @@ class TestProcess(unittest.TestCase):
                      if os.path.isfile(os.path.join(self.test_input_path, f))]
         self.assertIn(self.test_file_tif, onlyfiles)
 
-    # def test_merge_images_fails_with_exception(self):
-    #     worker.Process.side_effect = Exception()
-    #     with pytest.raises(Exception) as e:
-    #         worker.merge_images(self.fake_job_message, '', self.bad_test_bands)
-    #     assert 'Merge images failed' in str(e.value)
+    def test_merge_images_fails_with_exception(self):
+        worker.Process.side_effect = Exception()
+        with pytest.raises(Exception) as e:
+            worker.merge_images(self.fake_job_message, '', self.bad_test_bands)
+        assert 'Merge images failed' in str(e.value)
 
     def test_preview_name_files(self):
         file_pre_png, path_to_tif, path_to_png = (

@@ -242,12 +242,15 @@ def name_files(bands, input_path, scene_id, rendertype):
             file_png = '{}.png'.format(file_name)
             path_to_png = os.path.join(input_path, file_png)
             file_pre_png = 'pre_{}.png'.format(file_name)
+            write_activity('Name files', str(file_png), 'success')
             return file_pre_png, path_to_tif, path_to_png
         elif rendertype == 'full':
             file_zip = '{}.zip'.format(file_name)
             path_to_zip = os.path.join(input_path, file_zip)
+            write_activity('Name files', str(file_zip), 'success')
             return file_tif, path_to_tif, path_to_zip
     except:
+        write_activity('Name files', scene_id, 'error')
         raise Exception('File name creation failed')
 
 
