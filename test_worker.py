@@ -274,16 +274,15 @@ class TestProcess(unittest.TestCase):
         self.assertIn(self.test_band3_tif_filename2, onlyfiles)
         self.assertIn(self.test_band4_tif_filename2, onlyfiles)
 
-#     def test_preview_resize_bands_fails_with_message(self):
-#         with pytest.raises(Exception) as e:
-#             delete_me, rename_me = (
-#                 worker.resize_bands(self.fake_job_message,
-#                                     self.bad_test_bands,
-#                                     '',
-#                                     self.test_scene_id)
-#             )
-#         print(e.value)
-#         assert 'gdal_translate did not downsize images' in str(e.value)
+    def test_preview_resize_bands_error(self):
+        with pytest.raises(Exception) as e:
+            delete_me, rename_me = (
+                worker.resize_bands(self.fake_job_message,
+                                    self.bad_test_bands,
+                                    '',
+                                    self.test_scene_id)
+            )
+        assert 'gdal_translate did not downsize images' in str(e.value)
 
 #     @mock.patch('worker.worker.os')
 #     def test_preview_remove_and_rename(self, mock_os):
