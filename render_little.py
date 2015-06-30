@@ -194,7 +194,7 @@ def upload_to_s3(file_location, file_png, job):
         print 'Uploading to S3'
         conne = boto.connect_s3(aws_access_key_id=AWS_ACCESS_KEY_ID,
                                 aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-        b = conne.get_bucket('snapsatpreviews')
+        b = conne.get_bucket('snapsatpreviewsjoel')
         k = Key(b)
         k.key = file_png
         k.set_contents_from_filename(file_location)

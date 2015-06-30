@@ -234,7 +234,7 @@ class UserJob_Model(Base):
         if email_address:
             bands = str(job.band1) + str(job.band2) + str(job.band3)
             scene = job.entityid
-            full_render = ("http://snapsatcomposites.s3.amazonaws.com/{}_bands"
+            full_render = ("http://snapsatcompositesjoel.s3.amazonaws.com/{}_bands"
                            "_{}.zip").format(scene, bands)
             scene_url = 'http://snapsat.org/scene/{}#{}'.format(scene, bands)
             request_url = 'https://api.mailgun.net/v2/{0}/messages'.format(
