@@ -16,7 +16,7 @@ mock==1.0.1
 PasteDeploy==1.5.2
 py==1.4.26
 pyasn1==0.1.7
-Pygments==2.0.2
+Pygments==2.7.4
 pyramid==1.5.4
 pyramid-chameleon==0.3
 pyramid-debugtoolbar==2.3
